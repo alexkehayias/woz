@@ -1,0 +1,19 @@
+[package]
+name = "app"
+version = "0.1.0"
+authors = ["Alex Kehayias <alex.kehayias@gmail.com>"]
+edition = "2018"
+description = "Wozm"
+repository = "https://github.com/alexkehayias/wozm"
+
+[dev-dependencies]
+criterion = "0.2"
+
+[dependencies]
+itertools = "0.8"
+log = "0.4"
+toml = "0.4.2"
+serde = "1.0"
+serde_derive = "1.0"
+stdweb = "0.4.13"
+yew = "0.4.0"
