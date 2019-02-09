@@ -1,0 +1,15 @@
+name: woz
+version: "1.0.1"
+author: boop <alex.kehayias@gmail.com>
+about: Woz.sh command line tool
+settings:
+  - SubcommandRequiredElseHelp
+subcommands:
+  - setup:
+      about: Setup a woz.sh account and authentication
+  - init:
+      about: Initialize a new woz app in the current directory
+  - deploy:
+      about: Deploy this version of the app
+  - update:
+      about: Update to latest version of woz
