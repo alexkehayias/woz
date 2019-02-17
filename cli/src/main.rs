@@ -23,7 +23,6 @@
 use std::collections::HashMap;
 use std::io;
 use std::io::{stdin, stdout, Write};
-use std::io::prelude::*;
 use std::fs::File;
 use std::path::PathBuf;
 use std::fs;
@@ -38,9 +37,9 @@ use rusoto_cognito_idp::CognitoIdentityProvider;
 use rusoto_cognito_idp::*;
 
 
-const IDENTITY_POOL_ID: &'static str = "us-west-2:c2e83f1c-8a6a-482a-9318-2dcab7648fe0";
-const IDENTITY_POOL_URL: &'static str = "cognito-idp.us-west-2.amazonaws.com/us-west-2_LAE0aVAzH";
-const CLIENT_ID: &'static str = "fbg7q8rv3iu8d8r7n86isq4mg";
+const IDENTITY_POOL_ID: &'static str = env!("WOZ_IDENTITY_POOL_ID");
+const IDENTITY_POOL_URL: &'static str = env!("WOZ_IDENTITY_POOL_URL");
+const CLIENT_ID: &'static str = env!("WOZ_CLIENT_ID");
 
 fn get_home_path() -> PathBuf {
     let home: String = std::env::var_os("XDG_CONFIG_HOME")
@@ -344,10 +343,6 @@ fn main() {
                 let identity_id = ensure_identity_id(&id_client, &id_token);
                 let aws_token = aws_credentials(&id_client, &identity_id, &id_token).sync();
                 dbg!(aws_token);
-                // Write refresh token to disk
-
-                // TODO Acquire an access token
-                // TODO Acquire AWS S3 credentials
                 // TODO Create a local config file
                 // TODO Create a project landing page in S3
                 // Print the url

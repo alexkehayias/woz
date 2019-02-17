@@ -1,3 +1,6 @@
+env-dev
+env-qa
+env-prod
 notes.org
 foundry/target/
 app/target/
