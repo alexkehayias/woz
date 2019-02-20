@@ -26,24 +26,34 @@ use std::io::{stdin, stdout, Write};
 use std::fs::File;
 use std::path::PathBuf;
 use std::fs;
+use std::str;
+use std::error::Error;
 
 #[macro_use]
 extern crate clap;
 use clap::App;
 
-use rusoto_core::{Region, RusotoFuture};
+use rusoto_core::{Region, RusotoFuture, ByteStream};
+use rusoto_core::request::HttpClient;
+use rusoto_credential::StaticProvider;
 use rusoto_cognito_identity::*;
 use rusoto_cognito_idp::CognitoIdentityProvider;
 use rusoto_cognito_idp::*;
+use rusoto_s3::*;
+
+extern crate handlebars;
+#[macro_use]
+extern crate serde_json;
+use handlebars::Handlebars;
 
 
-const IDENTITY_POOL_ID: &'static str = env!("WOZ_IDENTITY_POOL_ID");
-const IDENTITY_POOL_URL: &'static str = env!("WOZ_IDENTITY_POOL_URL");
-const CLIENT_ID: &'static str = env!("WOZ_CLIENT_ID");
+const IDENTITY_POOL_ID: &str = env!("WOZ_IDENTITY_POOL_ID");
+const IDENTITY_POOL_URL: &str = env!("WOZ_IDENTITY_POOL_URL");
+const CLIENT_ID: &str = env!("WOZ_CLIENT_ID");
 
 fn get_home_path() -> PathBuf {
     let home: String = std::env::var_os("XDG_CONFIG_HOME")
-        .or(std::env::var_os("HOME"))
+        .or_else(|| std::env::var_os("HOME"))
         .map(|v| v.into_string().expect("Unable to parse $HOME to string"))
         .expect("No home");
     let mut buf = PathBuf::new();
@@ -170,21 +180,22 @@ struct Credentials {
 }
 
 type IdentityID = String;
-type IDToken = String;
 type RefreshToken = String;
 
-fn refresh_auth(client: &CognitoIdentityProviderClient, refresh_token: RefreshToken)
+fn refresh_auth(client: &CognitoIdentityProviderClient, refresh_token: &str)
                 -> RusotoFuture<InitiateAuthResponse, InitiateAuthError> {
-    let mut req = InitiateAuthRequest::default();
-    req.client_id = CLIENT_ID.to_string();
-    req.auth_flow = String::from("REFRESH_TOKEN_AUTH");
     let mut auth_params = HashMap::new();
-    auth_params.insert(String::from("REFRESH_TOKEN"), refresh_token);
-    req.auth_parameters = Some(auth_params);
+    auth_params.insert(String::from("REFRESH_TOKEN"), refresh_token.to_string());
+    let req = InitiateAuthRequest {
+        client_id: CLIENT_ID.to_string(),
+        auth_flow: String::from("REFRESH_TOKEN_AUTH"),
+        auth_parameters: Some(auth_params),
+        ..Default::default()
+    };
     client.initiate_auth(req)
 }
 
-fn identity_id(client: &CognitoIdentityClient, id_token: &IDToken)
+fn identity_id(client: &CognitoIdentityClient, id_token: &str)
                -> RusotoFuture<GetIdResponse, GetIdError> {
     let mut logins = HashMap::new();
     logins.insert(IDENTITY_POOL_URL.to_string(), id_token.to_owned());
@@ -195,7 +206,7 @@ fn identity_id(client: &CognitoIdentityClient, id_token: &IDToken)
     client.get_id(req)
 }
 
-fn aws_credentials(client: &CognitoIdentityClient, identity_id: &IdentityID, id_token: &IDToken)
+fn aws_credentials(client: &CognitoIdentityClient, identity_id: &str, id_token: &str)
                    -> RusotoFuture<GetCredentialsForIdentityResponse,
                                   GetCredentialsForIdentityError> {
     let mut logins = HashMap::new();
@@ -229,7 +240,7 @@ fn ensure_refresh_token(client: &CognitoIdentityProviderClient) -> RefreshToken 
         .unwrap()
 }
 
-fn ensure_identity_id(client: &CognitoIdentityClient, id_token: &IDToken)
+fn ensure_identity_id(client: &CognitoIdentityClient, id_token: &str)
                       -> IdentityID {
     let mut path = get_home_path();
     path.push(".identity");
@@ -245,9 +256,9 @@ fn ensure_identity_id(client: &CognitoIdentityClient, id_token: &IDToken)
         .unwrap()
 }
 
-fn store_token(refresh_token: &RefreshToken) {
+fn store_token(refresh_token: &str) {
     let home: String = std::env::var_os("XDG_CONFIG_HOME")
-        .or(std::env::var_os("HOME"))
+        .or_else(|| std::env::var_os("HOME"))
         .map(|v| v.into_string().unwrap())
         .expect("No home");
     let mut home_path = PathBuf::new();
@@ -262,9 +273,9 @@ fn store_token(refresh_token: &RefreshToken) {
     f.write_all(refresh_token.as_bytes()).unwrap();
 }
 
-fn store_user_id(user_id: &String) {
+fn store_user_id(user_id: &str) {
     let home: String = std::env::var_os("XDG_CONFIG_HOME")
-        .or(std::env::var_os("HOME"))
+        .or_else(|| std::env::var_os("HOME"))
         .map(|v| v.into_string().unwrap())
         .expect("No home");
     let mut home_path = PathBuf::new();
@@ -278,9 +289,9 @@ fn store_user_id(user_id: &String) {
     f.write_all(user_id.as_bytes()).unwrap();
 }
 
-fn store_identity_id(id: &IdentityID) {
+fn store_identity_id(id: &str) {
     let home: String = std::env::var_os("XDG_CONFIG_HOME")
-        .or(std::env::var_os("HOME"))
+        .or_else(|| std::env::var_os("HOME"))
         .map(|v| v.into_string().unwrap())
         .expect("No home");
     let mut home_path = PathBuf::new();
@@ -292,6 +303,30 @@ fn store_identity_id(id: &IdentityID) {
     fs::create_dir_all(home_path).unwrap();
     let mut f = File::create(&file_path).unwrap();
     f.write_all(id.as_bytes()).unwrap();
+}
+
+// TODO inline all the templates and register them with handlebars
+// TODO can we lazy_static all of these?
+const TEMPLATE: &str = include_str!("templates/base.html");
+const SERVICE_WORKER_JS_TEMPLATE: &str = include_str!("templates/serviceworker.js");
+
+fn index_template() -> Result<String, Box<Error>> {
+    let mut handlebars = Handlebars::new();
+    handlebars.set_strict_mode(true);
+    handlebars.register_template_string("index", TEMPLATE).expect("Failed to register");
+    handlebars.register_template_string("sw.js", SERVICE_WORKER_JS_TEMPLATE).expect("Failed to register");
+    Ok(handlebars.render(
+        "index",
+        &json!({
+            "name": "Test App",
+            "author": "Alex Kehayias",
+            "description": "Description here"
+        }))?)
+}
+
+#[test]
+fn test_index_templates() {
+    assert_eq!(index_template().expect("Failed to render"), "");
 }
 
 fn main() {
@@ -335,14 +370,50 @@ fn main() {
                 let id_provider_client = CognitoIdentityProviderClient::new(Region::UsWest2);
                 let id_client = CognitoIdentityClient::new(Region::UsWest2);
                 let refresh_token = ensure_refresh_token(&id_provider_client);
-                let id_token = refresh_auth(&id_provider_client, refresh_token)
+                let id_token = refresh_auth(&id_provider_client, &refresh_token)
                     .sync()
                     .expect("Failed to acquire access token")
                     .authentication_result.expect("No auth result")
                     .id_token.expect("No access token");
                 let identity_id = ensure_identity_id(&id_client, &id_token);
-                let aws_token = aws_credentials(&id_client, &identity_id, &id_token).sync();
-                dbg!(aws_token);
+                let aws_token = aws_credentials(&id_client, &identity_id, &id_token)
+                    .sync()
+                    .expect("Failed to fetch AWS credentials");
+                let aws_creds = aws_token.credentials.expect("Missing credentials");
+                let creds_provider = StaticProvider::new(
+                    aws_creds.access_key_id.expect("Missing access key"),
+                    aws_creds.secret_key.expect("Missing secret key"),
+                    Some(aws_creds.session_token.expect("Missing session token")),
+                    Some(aws_creds.expiration.expect("Missing expiration") as i64)
+                );
+                let request_dispatcher = HttpClient::new();
+                let s3_client = S3Client::new_with(
+                    request_dispatcher.expect("Failed to make an HttpClient"),
+                    creds_provider,
+                    Region::UsWest2
+                );
+                let req = PutObjectRequest {
+                    bucket: "wozm-dev".to_string(),
+                    key: format!("{}/test.txt", identity_id),
+                    body: Some(ByteStream::from(index_template().expect("fail").into_bytes())),
+                    content_type: Some("text/plain".to_string()),
+                    ..Default::default()
+                };
+                s3_client.put_object(req)
+                    .sync()
+                    .map_err(|err| {
+                        match err {
+                            PutObjectError::Unknown(resp) => {
+                                dbg!(str::from_utf8(&resp.body)
+                                     .expect("Failed to parse response body"));
+                            },
+                            PutObjectError::Credentials(e) => {dbg!(e);},
+                            _ => {dbg!("err");}
+                        };
+                        panic!("ut oh");
+                    })
+                    .and_then(|resp| Ok(dbg!(resp)))
+                    .ok();
                 // TODO Create a local config file
                 // TODO Create a project landing page in S3
                 // Print the url
