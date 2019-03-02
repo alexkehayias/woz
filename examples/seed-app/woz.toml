@@ -1,0 +1,3 @@
+name="Example: Seed App"
+lib="wasm-bindgen"
+wasm_path="target/wasm32-unknown-unknown/release/seed_app.wasm"

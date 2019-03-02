@@ -81,10 +81,32 @@ impl<'de> Deserialize<'de> for Lib {
     }
 }
 
+#[derive(Debug, Serialize)]
+enum Environment {
+    Release,
+    Development,
+    Unknown(String)
+}
+
+impl<'de> Deserialize<'de> for Environment {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+        where D: Deserializer<'de>
+    {
+        let s = String::deserialize(deserializer)?;
+        Ok(match s.as_str() {
+            "release" => Environment::Release,
+            "development" => Environment::Development,
+            _ => Environment::Unknown(s),
+        })
+    }
+}
+
 #[derive(Debug, Deserialize)]
 struct Config {
     lib: Option<Lib>,
     name: String,
+    env: Option<Environment>,
+    wasm_path: PathBuf
 }
 
 impl Default for Config {
@@ -92,6 +114,8 @@ impl Default for Config {
         Self {
             lib: Some(Lib::WasmBindgen),
             name: String::from("My App"),
+            env: Some(Environment::Release),
+            wasm_path: PathBuf::new(),
         }
     }
 }
@@ -352,13 +376,15 @@ fn store_identity_id(id: &str) {
 
 // TODO inline all the templates and register them with handlebars
 // TODO can we lazy_static all of these?
-const TEMPLATE: &str = include_str!("templates/index.html");
+const INDEX_TEMPLATE: &str = include_str!("templates/index.html");
+const MANIFEST_TEMPLATE: &str = include_str!("templates/manifest.json");
 const SERVICE_WORKER_JS_TEMPLATE: &str = include_str!("templates/serviceworker.js");
 
 fn load_templates() -> Result<Handlebars, Box<Error>> {
     let mut handlebars = Handlebars::new();
     handlebars.set_strict_mode(true);
-    handlebars.register_template_string("index", TEMPLATE)?;
+    handlebars.register_template_string("index", INDEX_TEMPLATE)?;
+    handlebars.register_template_string("manifest", MANIFEST_TEMPLATE)?;
     handlebars.register_template_string("sw.js", SERVICE_WORKER_JS_TEMPLATE)?;
     Ok(handlebars)
 }
@@ -509,6 +535,12 @@ fn main() {
                         dbg!(err);
                         let creds = prompt_login();
                         login(&id_provider_client, creds.username, creds.password).sync()
+                            .and_then(|resp| {
+                                let token = resp.clone()
+                                    .authentication_result.expect("Failed")
+                                    .refresh_token.expect("Missing refresh token");
+                                store_token(&token);
+                                Ok(resp)})
                     })
                     .expect("Failed to id token")
                     .authentication_result.expect("No auth result")
@@ -540,21 +572,26 @@ fn main() {
                 let mut wasm_pkg_path = out_path.clone();
                 wasm_pkg_path.push("app_bg.wasm");
 
-                // TODO get this from config
                 let mut wasm_path = project_path.clone();
-                wasm_path.push("target/wasm32-unknown-unknown/release/wasm_pack_percy.wasm");
+                wasm_path.push(conf.wasm_path);
 
                 let index_template = handlebars.render("index", &json!({
                     "name": "Test App",
                     "author": "Alex Kehayias",
                     "description": "Description here",
+                    "manifest_path": "./manifest.json",
                     "app_js_path": "./app.js",
                     "sw_js_path": "./sw.js",
                     "wasm_path": "./app.wasm",
                 }));
+                let manifest_template = handlebars.render("manifest", &json!({
+                    "name": conf.name,
+                    "short_name": "",
+                    "bg_color": "#ffffff",
+                    "description": "Description here",
+                }));
                 let service_worker_template = handlebars.render("sw.js", &json!({}));
 
-                // TODO generate the import/export wasm/js shim
                 let wasm_package = wasm_package(
                     conf.lib.unwrap(),
                     wasm_path,
@@ -565,6 +602,9 @@ fn main() {
                     (format!("{}/index.html", identity_id),
                      String::from("text/html"),
                      index_template.expect("Failed to render index.html").into_bytes()),
+                    (format!("{}/manifest.json", identity_id),
+                     String::from("application/manifest+json"),
+                     manifest_template.expect("Failed to render manifest.json").into_bytes()),
                     (format!("{}/sw.js", identity_id),
                      String::from("application/javascript"),
                      service_worker_template.expect("Failed to render sw.js").into_bytes()),

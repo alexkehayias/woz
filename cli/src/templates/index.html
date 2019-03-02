@@ -6,17 +6,25 @@
     <meta name="description" content="{{ description }}">
     <meta name="author" content="{{ author }}">
     <meta http-equiv="content-type" content="text/html; charset=utf-8">
+    {{!-- Specifies the splash screen color on app load --}}
     <meta name="theme-color" content="#1A1A1A">
-    <meta name="viewport" content="width=device-width,minimum-scale=1,initial-scale=1,user-scalable=yes">
+    {{!-- Disable pinch to zoom by setting user-scalable="no"  --}}
+    <meta name="viewport" content="width=device-width,minimum-scale=1,initial-scale=1,user-scalable=no">
+    {{!-- Specifies this is Mobile Safari PWA capable --}}
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-status-bar-style" content="black">
+    {{!--
+    Sets the iOS status bar style to be translucent i.e match the background color.
+    Unfortunately, the text color is always white so this will look bad if the app
+    background is a light color due to the low contrast.
+    --}}
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="apple-touch-icon" type="image/png" sizes="180x180" href="icons/todo.jpeg">
     <meta property="og:image" content="icons/todo.jpeg">
     <meta property="og:locale" content="en_US">
     <link rel="shortcut icon" href="icons/todo.jpeg">
     <link rel="icon" type="image/png" sizes="196x196" href="icons/todo.jpeg">
     <link rel="stylesheet" href="styles/main.css">
-    <link rel="manifest" href="manifest.json">
+    <link rel="manifest" href="{{ manifest_path }}">
     <meta property="og:locale" content="en_US">
     <meta property="og:type" content="article">
     <meta property="og:title" content="TODO">
@@ -31,13 +39,22 @@
     <meta name="twitter:image" content="TODO.jpeg">
     <meta name="twitter:creator" content="@alexkehayias">
     <script src="{{ app_js_path }}"></script>
+    <style>
+     body {
+       -webkit-touch-callout: none;
+       -webkit-user-select: none;
+       -khtml-user-select: none;
+       -moz-user-select: none;
+       -ms-user-select: none;
+       user-select: none;
+     }
+    </style>
   </head>
   <body>
     <header>
       <h1>{{ name }}</h1>
     </header>
-    <main>
-    </main>
+    <main id="app"></main>
     <footer>
       <p>© Woz 2019</p>
     </footer>
