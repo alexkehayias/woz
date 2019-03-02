@@ -4,6 +4,13 @@ author: boop <alex.kehayias@gmail.com>
 about: Woz.sh command line tool
 settings:
   - SubcommandRequiredElseHelp
+args:
+  - path:
+      short: p
+      long: path
+      value_name: PATH
+      help: Sets the directory path to run on
+      takes_value: true
 subcommands:
   - setup:
       about: Setup a woz.sh account and authentication

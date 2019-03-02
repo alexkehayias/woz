@@ -30,11 +30,11 @@
     <meta name="twitter:site" content="@alexkehayias">
     <meta name="twitter:image" content="TODO.jpeg">
     <meta name="twitter:creator" content="@alexkehayias">
-    <script src="TODO" defer></script>
+    <script src="{{ app_js_path }}"></script>
   </head>
   <body>
     <header>
-      <h1>Hello World</h1>
+      <h1>{{ name }}</h1>
     </header>
     <main>
     </main>
@@ -42,8 +42,12 @@
       <p>© Woz 2019</p>
     </footer>
     <script>
+     wasm_bindgen('{{ wasm_path }}')
+       .then(wasm_bindgen.render)
+       .catch(console.error);
+
      if('serviceWorker' in navigator) {
-       navigator.serviceWorker.register('/serviceworker.js');
+       navigator.serviceWorker.register('{{ sw_js_path }}');
      };
     </script>
   </body>
