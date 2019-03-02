@@ -1,3 +1,5 @@
 name="Example: Seed App"
+project_id="seed"
+short_name="Seed"
 lib="wasm-bindgen"
 wasm_path="target/wasm32-unknown-unknown/release/seed_app.wasm"

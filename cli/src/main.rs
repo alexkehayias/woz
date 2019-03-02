@@ -56,6 +56,8 @@ use rusoto_s3::*;
 use handlebars::Handlebars;
 
 
+const SCHEME: &str = env!("WOZ_WEB_SCHEME");
+const NETLOC: &str = env!("WOZ_WEB_NETLOC");
 const IDENTITY_POOL_ID: &str = env!("WOZ_IDENTITY_POOL_ID");
 const IDENTITY_POOL_URL: &str = env!("WOZ_IDENTITY_POOL_URL");
 const CLIENT_ID: &str = env!("WOZ_CLIENT_ID");
@@ -101,10 +103,28 @@ impl<'de> Deserialize<'de> for Environment {
     }
 }
 
+#[derive(Debug, Serialize)]
+struct ProjectId(String);
+
+impl<'de> Deserialize<'de> for ProjectId {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+        where D: Deserializer<'de>
+    {
+        let s = String::deserialize(deserializer)?;
+        if s.chars().all(char::is_alphanumeric) {
+            Ok(ProjectId(s))
+        } else {
+            Err(serde::de::Error::custom(String::from("must be alphanumeric")))
+        }
+    }
+}
+
 #[derive(Debug, Deserialize)]
 struct Config {
+    project_id: ProjectId,
     lib: Option<Lib>,
     name: String,
+    short_name: Option<String>,
     env: Option<Environment>,
     wasm_path: PathBuf
 }
@@ -112,8 +132,10 @@ struct Config {
 impl Default for Config {
     fn default() -> Self {
         Self {
+            project_id: ProjectId(String::from("default")),
             lib: Some(Lib::WasmBindgen),
             name: String::from("My App"),
+            short_name: Some(String::from("App")),
             env: Some(Environment::Release),
             wasm_path: PathBuf::new(),
         }
@@ -410,13 +432,13 @@ struct WasmPackageError;
 
 impl fmt::Display for WasmPackageError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "Failed to generate app loader js")
+        write!(f, "Failed to generate wasm package")
     }
 }
 
 impl Error for WasmPackageError {
     fn description(&self) -> &str {
-        "Failed to generate app loader js"
+        "Failed to generate wasm package"
     }
 }
 
@@ -472,25 +494,24 @@ fn test_wasm_package() {
     actual.unwrap();
 }
 
-fn main() {
+// TODO replace Box<Error> with an enum of all the possible errors
+fn main() -> Result<(), Box<Error>>{
     let yaml = load_yaml!("cli.yaml");
     let app = App::from_yaml(yaml);
-    let handlebars = load_templates().expect("Failed to load templates");
+    let handlebars = load_templates()?;
     let input = app.get_matches();
 
     // Get the project path either from being passed in as an arg or
     // default to the current directory
     let project_path = input.args.get("path")
-        .map_or(env::current_dir(), |arg| Ok(PathBuf::from(&arg.vals[0])))
-        .expect("Failed to get project path");
+        .map_or(env::current_dir(), |arg| Ok(PathBuf::from(&arg.vals[0])))?;
 
     // Load the config if present or use default config
     let mut conf_path = project_path.clone();
     conf_path.push("woz.toml");
-    let conf: Config = fs::read_to_string(conf_path)
-        .map(|s| toml::from_str(&s).unwrap())
-        .or::<Config>(Ok(Config::default()))
-        .expect("Failed to load conf");
+    let conf_str = fs::read_to_string(conf_path)?;
+    let conf: Config = toml::from_str(&conf_str)?;
+    let ProjectId(project_id) = conf.project_id;
 
     if let Some(sub) = input.subcommand_name() {
         match Command::from(sub) {
@@ -525,6 +546,13 @@ fn main() {
             // 2. A new subdomain on woz
             Command::Init => {
                 println!("Init...");
+                // TODO Create a local config file
+                // TODO Create a project landing page in S3
+                // TODO Create the .woz home directory
+                // Print the url
+            },
+            Command::Deploy => {
+                println!("Deploying...");
                 let id_provider_client = CognitoIdentityProviderClient::new(Region::UsWest2);
                 let id_client = CognitoIdentityClient::new(Region::UsWest2);
 
@@ -566,11 +594,9 @@ fn main() {
                 );
 
                 let mut out_path = get_home_path();
+                out_path.push(&project_id);
                 out_path.push("pkg");
                 fs::create_dir_all(&out_path).expect("Failed to make pkg directory");
-
-                let mut wasm_pkg_path = out_path.clone();
-                wasm_pkg_path.push("app_bg.wasm");
 
                 let mut wasm_path = project_path.clone();
                 wasm_path.push(conf.wasm_path);
@@ -598,20 +624,24 @@ fn main() {
                     out_path,
                 ).expect("Failed to generate wasm package");
 
+                // All app files will be prefixed in the s3 bucket by the user's
+                // cognito identity ID and project_id
+                let key_prefix = format!("{}/{}", &identity_id, &project_id);
+
                 let files = vec![
-                    (format!("{}/index.html", identity_id),
+                    (format!("{}/index.html", key_prefix),
                      String::from("text/html"),
                      index_template.expect("Failed to render index.html").into_bytes()),
-                    (format!("{}/manifest.json", identity_id),
+                    (format!("{}/manifest.json", key_prefix),
                      String::from("application/manifest+json"),
                      manifest_template.expect("Failed to render manifest.json").into_bytes()),
-                    (format!("{}/sw.js", identity_id),
+                    (format!("{}/sw.js", key_prefix),
                      String::from("application/javascript"),
                      service_worker_template.expect("Failed to render sw.js").into_bytes()),
-                    (format!("{}/app.js", identity_id),
+                    (format!("{}/app.js", key_prefix),
                      String::from("application/javascript"),
                      fs::read_to_string(wasm_package.js).expect("Failed to read js file").into_bytes()),
-                    (format!("{}/app.wasm", identity_id),
+                    (format!("{}/app.wasm", key_prefix),
                      String::from("application/wasm"),
                      {
                          let mut f = File::open(wasm_package.wasm).expect("Failed to read wasm file");
@@ -647,12 +677,14 @@ fn main() {
                         .ok();
                 };
 
-                // TODO Create a local config file
-                // TODO Create a project landing page in S3
-                // Print the url
-            },
-            Command::Deploy => {
-                println!("Deploying...");
+                let location = format!(
+                    "{}://{}/{}/{}/index.html",
+                    SCHEME,
+                    NETLOC,
+                    identity_id,
+                    project_id
+                );
+                println!("{}", format!("Your app is available at {}", location));
             }
             // Sub command parsing will print the error and exit
             // before we get to this match statement so the only way
@@ -661,4 +693,5 @@ fn main() {
             _ => unimplemented!()
         };
     }
+    Ok(())
 }

@@ -1,2 +1,5 @@
+project_id="percy"
 name="Example: wasm-pack and percy"
+short_name="Percy"
 lib="wasm-bindgen"
+wasm_path="target/wasm32-unknown-unknown/release/percy_app.wasm"
