@@ -1,0 +1,24 @@
+[package]
+name = "percy-app"
+version = "0.1.0"
+authors = ["Alex Kehayias <alex.kehayias@gmail.com>"]
+edition = "2018"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+wasm-bindgen = "0.2.37"
+js-sys = "0.3.14"
+virtual-dom-rs = "0.6"
+css-rs-macro = "0.1"
+
+[dependencies.web-sys]
+version = "0.3.14"
+features = [
+    "Document",
+    "Event",
+    "MouseEvent",
+    "Window",
+    "console",
+]
