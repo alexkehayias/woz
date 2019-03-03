@@ -164,6 +164,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "percy-app"
+version = "0.1.0"
+dependencies = [
+ "css-rs-macro 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "js-sys 0.3.14 (registry+https://github.com/rust-lang/crates.io-index)",
+ "virtual-dom-rs 0.6.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "wasm-bindgen 0.2.37 (registry+https://github.com/rust-lang/crates.io-index)",
+ "web-sys 0.3.14 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
 name = "proc-macro2"
 version = "0.4.27"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -392,17 +403,6 @@ dependencies = [
  "syn 0.15.26 (registry+https://github.com/rust-lang/crates.io-index)",
  "wasm-bindgen-backend 0.2.37 (registry+https://github.com/rust-lang/crates.io-index)",
  "weedle 0.8.0 (registry+https://github.com/rust-lang/crates.io-index)",
-]
-
-[[package]]
-name = "wasm-pack-percy"
-version = "0.1.0"
-dependencies = [
- "css-rs-macro 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "js-sys 0.3.14 (registry+https://github.com/rust-lang/crates.io-index)",
- "virtual-dom-rs 0.6.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "wasm-bindgen 0.2.37 (registry+https://github.com/rust-lang/crates.io-index)",
- "web-sys 0.3.14 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
