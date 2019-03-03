@@ -3,6 +3,6 @@ env-qa
 env-prod
 notes.org
 foundry/target/
-app/target/
 cli/target/
+examples/*/target
 .DS_Store
