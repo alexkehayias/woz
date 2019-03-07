@@ -142,7 +142,7 @@ impl Default for Config {
     }
 }
 
-fn get_home_path() -> PathBuf {
+fn default_home_path() -> Result<PathBuf, Box<Error>> {
     let home: String = std::env::var_os("XDG_CONFIG_HOME")
         .or_else(|| std::env::var_os("HOME"))
         .map(|v| v.into_string().expect("Unable to parse $HOME to string"))
@@ -150,17 +150,23 @@ fn get_home_path() -> PathBuf {
     let mut buf = PathBuf::new();
     buf.push(home);
     buf.push(".woz");
-    buf
+    Ok(buf)
+}
+
+fn username(home_path: PathBuf) -> Result<String, std::io::Error> {
+    let mut path = home_path;
+    path.push(".username");
+    fs::read_to_string(path)
 }
 
 #[test]
 // TODO only compile on macOS
-fn get_home_path_test() {
+fn default_home_path_test() {
     let user = std::env::var_os("USER")
         .map(|v| v.into_string().expect("Could not parse $USER to string"))
         .expect("Could not get a $USER");
     let path_str = format!("/Users/{}/.woz", user);
-    assert_eq!(PathBuf::from(path_str), get_home_path());
+    assert_eq!(PathBuf::from(path_str), default_home_path().unwrap());
 }
 
 enum Command {
@@ -311,68 +317,60 @@ fn aws_credentials(client: &CognitoIdentityClient, identity_id: &str, id_token: 
 
 /// Attempt to get a refresh_token token, prompting the user to log in if
 /// refresh token is expired and stores it locally.
-fn ensure_refresh_token(client: &CognitoIdentityProviderClient) -> RefreshToken {
-    let mut path = get_home_path();
+fn ensure_refresh_token(home_path: &PathBuf, client: &CognitoIdentityProviderClient) -> RefreshToken {
+    let mut path = home_path.clone();
     path.push(".refresh_token");
+    dbg!(path.clone());
+
     fs::read_to_string(path)
-        .or_else::<io::Error, _>(|_| {
+        .or_else::<io::Error, _>(|err| {
+            dbg!(err);
             let creds = prompt_login();
             let token = login(&client, creds.username, creds.password).sync()
                 .and_then(|resp| {
                     let token = resp
                         .authentication_result.expect("Failed")
                         .refresh_token.expect("Missing refresh token");
-                    store_token(&token);
+                    store_token(&home_path, &token);
                     Ok(token)})
-                .or_else::<io::Error, _>(|_| Ok(ensure_refresh_token(client)))
+                .or_else::<io::Error, _>(|err| {
+                    dbg!(err);
+                    Ok(ensure_refresh_token(home_path, client))
+                })
                 .expect("Something went wrong");
             Ok(token)
         })
         .unwrap()
 }
 
-fn ensure_identity_id(client: &CognitoIdentityClient, id_token: &str)
+fn ensure_identity_id(home_path: &PathBuf, client: &CognitoIdentityClient, id_token: &str)
                       -> IdentityID {
-    let mut path = get_home_path();
+    let mut path = home_path.clone();
     path.push(".identity");
+
     fs::read_to_string(path)
         .or_else::<io::Error, _>(|_| {
             let id = identity_id(client, id_token)
                 .sync()
                 .expect("Failed to get identity ID")
                 .identity_id.expect("No identity ID");
-            store_identity_id(&id);
+            store_identity_id(&home_path, &id);
             Ok(id)
         })
         .unwrap()
 }
 
-fn store_token(refresh_token: &str) {
-    let home: String = std::env::var_os("XDG_CONFIG_HOME")
-        .or_else(|| std::env::var_os("HOME"))
-        .map(|v| v.into_string().unwrap())
-        .expect("No home");
-    let mut home_path = PathBuf::new();
-    home_path.push(home);
-    home_path.push(".woz");
-
+fn store_token(home_path: &PathBuf, refresh_token: &str) {
     let mut file_path = home_path.clone();
     file_path.push(".refresh_token");
+    dbg!(file_path.clone());
 
     fs::create_dir_all(home_path).unwrap();
     let mut f = File::create(&file_path).unwrap();
     f.write_all(refresh_token.as_bytes()).unwrap();
 }
 
-fn store_user_id(user_id: &str) {
-    let home: String = std::env::var_os("XDG_CONFIG_HOME")
-        .or_else(|| std::env::var_os("HOME"))
-        .map(|v| v.into_string().unwrap())
-        .expect("No home");
-    let mut home_path = PathBuf::new();
-    home_path.push(home);
-    home_path.push(".woz");
-
+fn store_user_id(home_path: &PathBuf, user_id: &str) {
     let mut file_path = home_path.clone();
     file_path.push(".user");
     fs::create_dir_all(home_path).unwrap();
@@ -380,15 +378,7 @@ fn store_user_id(user_id: &str) {
     f.write_all(user_id.as_bytes()).unwrap();
 }
 
-fn store_identity_id(id: &str) {
-    let home: String = std::env::var_os("XDG_CONFIG_HOME")
-        .or_else(|| std::env::var_os("HOME"))
-        .map(|v| v.into_string().unwrap())
-        .expect("No home");
-    let mut home_path = PathBuf::new();
-    home_path.push(home);
-    home_path.push(".woz");
-
+fn store_identity_id(home_path: &PathBuf, id: &str) {
     let mut file_path = home_path.clone();
     file_path.push(".identity");
     fs::create_dir_all(home_path).unwrap();
@@ -496,21 +486,37 @@ fn test_wasm_package() {
 
 // TODO replace Box<Error> with an enum of all the possible errors
 fn main() -> Result<(), Box<Error>>{
+    let handlebars = load_templates()?;
+
     let yaml = load_yaml!("cli.yaml");
     let app = App::from_yaml(yaml);
-    let handlebars = load_templates()?;
     let input = app.get_matches();
 
     // Get the project path either from being passed in as an arg or
     // default to the current directory
-    let project_path = input.args.get("path")
-        .map_or(env::current_dir(), |arg| Ok(PathBuf::from(&arg.vals[0])))?;
+    let project_path = input.args.get("project")
+        .map_or(env::current_dir(),
+                |arg| Ok(PathBuf::from(&arg.vals[0])))?;
+    println!("Using project path {}", project_path.to_str().unwrap());
+
+    let home_path = input.args.get("home")
+        .map_or(default_home_path(),
+                |arg| Ok(PathBuf::from(&arg.vals[0])))?;
+    println!("Using home path {}", home_path.to_str().unwrap());
 
     // Load the config if present or use default config
     let mut conf_path = project_path.clone();
     conf_path.push("woz.toml");
-    let conf_str = fs::read_to_string(conf_path)?;
+    let conf_str = fs::read_to_string(conf_path.clone())
+        .or_else(|e| {
+            println!("Couldn't find woz config at {}", conf_path.to_str().unwrap());
+            Err(e)
+        })
+        .expect("Failed to load conf");
     let conf: Config = toml::from_str(&conf_str)?;
+
+    // let username = username(home_path.clone());
+
     let ProjectId(project_id) = conf.project_id;
 
     if let Some(sub) = input.subcommand_name() {
@@ -535,7 +541,7 @@ fn main() -> Result<(), Box<Error>>{
                     })
                     .and_then(|resp| {
                         let user_id = resp.user_sub;
-                        store_user_id(&user_id);
+                        store_user_id(&home_path, &user_id);
                         Ok(())
                     })
                     .expect("An error occured");
@@ -556,7 +562,7 @@ fn main() -> Result<(), Box<Error>>{
                 let id_provider_client = CognitoIdentityProviderClient::new(Region::UsWest2);
                 let id_client = CognitoIdentityClient::new(Region::UsWest2);
 
-                let refresh_token = ensure_refresh_token(&id_provider_client);
+                let refresh_token = ensure_refresh_token(&home_path, &id_provider_client);
                 let id_token = refresh_auth(&id_provider_client, &refresh_token)
                     .sync()
                     .or_else(|err| {
@@ -567,13 +573,13 @@ fn main() -> Result<(), Box<Error>>{
                                 let token = resp.clone()
                                     .authentication_result.expect("Failed")
                                     .refresh_token.expect("Missing refresh token");
-                                store_token(&token);
+                                store_token(&home_path, &token);
                                 Ok(resp)})
                     })
                     .expect("Failed to id token")
                     .authentication_result.expect("No auth result")
                     .id_token.expect("No access token");
-                let identity_id = ensure_identity_id(&id_client, &id_token);
+                let identity_id = ensure_identity_id(&home_path, &id_client, &id_token);
                 let aws_token = aws_credentials(&id_client, &identity_id, &id_token)
                     .sync()
                     .expect("Failed to fetch AWS credentials");
@@ -593,7 +599,7 @@ fn main() -> Result<(), Box<Error>>{
                     Region::UsWest2
                 );
 
-                let mut out_path = get_home_path();
+                let mut out_path = home_path.clone();
                 out_path.push(&project_id);
                 out_path.push("pkg");
                 fs::create_dir_all(&out_path).expect("Failed to make pkg directory");
