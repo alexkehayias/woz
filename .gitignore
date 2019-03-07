@@ -6,3 +6,5 @@ foundry/target/
 cli/target/
 examples/*/target
 .DS_Store
+site/public/
+site/static/install/*

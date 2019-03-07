@@ -1,0 +1,23 @@
+# Generate the site
+zola build
+
+# Upload to S3 and cloudfront
+while getopts ":s:" opt; do
+    case $opt in
+        s)
+            if [ $OPTARG == "images" ];
+            then
+                S3_ARGS=(--exclude '*.jpeg' --exclude '*.jpg' --exclude '*.png')
+            else
+                echo "Invalid upload skip option -$OPTARG" >&2
+                exit 1
+            fi
+            ;;
+        \?) echo "Invalid option -$OPTARG" >&2
+            exit 1
+            ;;
+    esac
+done
+
+echo "Uploading with command: aws s3 cp ./public s3://woz.sh --recursive $S3_OPTS"
+aws s3 cp ./public s3://woz.sh --recursive ${S3_ARGS[@]}

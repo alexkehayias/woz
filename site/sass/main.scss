@@ -1,0 +1,496 @@
+html {
+    height: 100%;
+}
+
+body {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+    background: white;
+    color: #050512cc;
+    margin: 0;
+    padding: 0;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    font-weight: 550;
+    color: #570032;
+}
+
+h1 {
+    font-size: 1.7em;
+    line-height: 1.2em;
+}
+
+h2 {
+    font-size: 1.4em;
+    line-height: 1.2em;
+}
+
+h3 {
+    font-size: 1.2em;
+    font-style: italic;
+    font-weight: 450;
+    line-height: 1.1em;
+}
+
+a {
+    color: #570032;
+}
+
+h2 a {
+    text-decoration: none;
+}
+
+h3 a {
+    text-decoration: none;
+}
+
+p {
+    font-size: 1em;
+    font-weight: 450;
+    line-height: 1.4em;
+}
+
+code {
+    line-height: 1em;
+    font-size: 1em;
+    vertical-align: middle;
+    background: #ededed;
+    color: #d5007b;
+    padding: 3px;
+}
+
+pre {
+    overflow: auto;
+}
+
+a {
+
+}
+
+ul {
+    padding-left: 0px;
+}
+
+li {
+    list-style-type: none;
+    position: relative;
+    padding-bottom: 10px;
+}
+
+li:before {
+  content: '»';
+  position: absolute;
+  left: -1em;
+  font-size: 0.85em;
+}
+
+img {
+    width: 100%;
+}
+
+footer {
+    flex-shrink: 0;
+    padding: 24px 0;
+    text-align: center;
+    font-size: 0.75em;
+    font-family: courier;
+}
+
+blockquote {
+    background: #eee;
+    font-style: italic;
+    padding: 10px;
+}
+
+table {
+    border-collapse: collapse;
+}
+
+thead tr {
+    background: #1e1e1e;
+}
+
+thead tr th {
+    color: white;
+    padding: 5px;
+}
+
+th {
+    text-align: left;
+}
+
+td {
+    padding: 3px;
+}
+
+tbody {
+    font-family: Menlo, monospace, sans-serif;
+    font-size: 0.8em;
+}
+
+tbody tr {
+    background: white;
+}
+
+tbody tr:nth-child(even) {
+    background: #eee;
+}
+
+pre {
+    background: #eee;
+    padding: 10px;
+}
+
+main {
+    padding: 12px 0;
+}
+
+hr {
+    display: block;
+    height: 1px;
+    border: 0;
+    border-top: 2px solid #efefef;
+    margin: 1em 0;
+    padding: 0;
+}
+
+button {
+    outline: none;
+    font-size: 1em;
+    font-weight: 600;
+    padding: 10px 21px;
+    display: inline-block;
+    border: 0px;
+    margin-right: 10px;
+    text-align: center;
+    background: #067d6b;
+    color: white;
+    text-decoration: none;
+    border-radius: 4px;
+}
+
+button:hover {
+    background: #05594c;
+    cursor: pointer;
+}
+
+.hi {
+    display: inline-block;
+    font-size: 14px;
+    font-weight: bold;
+    background: #570032;
+    color: white;
+    font-family: menlo;
+    padding: 6px;
+    margin-left: -40px;
+    padding-right: 3px;
+}
+
+h1.title {
+    font-weight: 600;
+    box-shadow: inset 0 0px 0 #efefef, inset 0 -2px 0 #efefef;
+    padding-bottom: 18px;
+    display: inline-block;
+    margin: 0;
+}
+
+.section-title {
+    background: blue;
+    padding: 1em 0 0.4em 1em;
+}
+
+.section-title h2 {
+    color: white;
+    font-size: 1em;
+    text-transform: uppercase;
+    font-family: Menlo, monospace, sans-serif;
+    letter-spacing: 4px;
+}
+
+h3.article-title a {
+    font-size: 1.2em;
+    text-decoration: none;
+}
+
+.logo {
+    font-family: futura;
+    font-size: 1.3em;
+    text-decoration: none;
+    font-weight: normal;
+}
+
+/* Without the !important the text decoration remains underlined for some reason */
+.logo:hover {
+  text-decoration: unset !important;
+  cursor: pointer;
+}
+
+.main-container {
+    flex: 1 0 auto;
+    width: 540px;
+    margin: auto;
+    margin-top: 30px;
+    box-sizing: border-box;
+    -webkit-box-sizing: border-box;
+}
+
+a.nav-item {
+    margin: 0 0 0 20px;
+    float: right;
+    line-height: 30px;
+    font-size: 0.8em;
+    font-family: Menlo, monospace, sans-serif;
+    text-decoration: none;
+}
+
+a.nav-item:last-child {
+    margin: 0;
+}
+
+ul.pagination {
+    list-style: none;
+    padding-left: 0;
+}
+
+.pagination li {
+    display: inline-block;
+    padding-right: 10px;
+}
+
+/* Grids */
+
+.container {
+    display: flex;
+    display: -webkit-flex;
+    align-items: center;
+    -webkit-align-items: center;
+    justify-content: center;
+    -webkit-justify-content: center;
+}
+
+.container.left {
+    align-items: flex-start;
+    -webkit-align-items: flex-start;
+    justify-content: flex-start;
+    -webkit-justify-content: flex-start;
+}
+
+.container.right {
+    align-items: flex-end;
+    -webkit-align-items: flex-end;
+    justify-content: flex-end;
+    -webkit-justify-content: flex-end;
+}
+
+.container .item {
+    align-self: center;
+    -webkit-align-self: center;
+    min-width: 480px;
+    max-width: 480px;
+    min-height: 400px;
+}
+
+.container .item.full {
+    align-self: center;
+    -webkit-align-self: center;
+    min-width: 940px;
+    max-width: 940px;
+}
+
+.container .item.double {
+    min-height: 800px;
+}
+
+.container .item.max {
+    min-height: 100%;
+    min-width: 100%;
+}
+
+.round-corners {
+    border-radius: 4px;
+}
+
+.grid {
+}
+
+@media (max-width: 600px) {
+    .main-container {
+        margin-top: 0;
+        padding: 20px;
+        min-width: 100%;
+        max-width: 100%;
+    }
+    .nav-item {
+        float: none;
+    }
+    .grid {
+        display: block;
+        min-width: 100% !important;
+        max-width: 100% !important;
+    }
+    .hi {
+        margin-left: 0;
+    }
+}
+
+.grid.one {
+    min-width: 8.333333%;
+    max-width: 8.333333%;
+}
+
+.grid.two {
+    min-width: 16.666666%;
+    max-width: 16.666666%;
+}
+
+.grid.three {
+    min-width: 25%;
+    max-width: 25%;
+}
+
+.grid.four {
+    min-width: 33.333333%;
+    max-width: 33.333333%;
+}
+
+.grid.six {
+    min-width: 50%;
+    max-width: 50%;
+}
+
+.grid.eight {
+    min-width: 66.666666%;
+    max-width: 66.666666%;
+}
+
+.grid.ten {
+    min-width: 83.333333%;
+    max-width: 83.333333%;
+}
+
+.grid.eleven {
+    min-width: 91.666666%;
+}
+
+.grid.twelve {
+    min-width: 100%;
+}
+
+.row {
+    display: flex;
+    margin: 0 auto;
+    -webkit-flex-wrap: wrap;
+    flex-wrap: wrap;
+    -webkit-box-sizing: border-box;
+    box-sizing: border-box;
+}
+
+.row.padded {
+    padding: 10px 0;
+}
+
+@media (max-width: 600px) {
+    .row {
+        display: block;
+        min-width: 100%;
+        max-width: 100%;
+    }
+}
+
+.row.full-width {
+    width: 100%;
+    max-width: 100%;
+    -webkit-box-sizing: border-box;
+    box-sizing: border-box;
+}
+
+.row.full-height {
+    height: 100%;
+    max-height: 100%;
+}
+
+.row .center {
+    align-items: center;
+    text-align: center;
+}
+
+.row .grid {
+    -webkit-box-sizing: border-box;
+    box-sizing: border-box;
+}
+
+.row .grid.four {
+    -webkit-flex: 0 0 33.3333%;
+    flex: 0 0 33.3333%;
+}
+
+.row .grid.six {
+    -webkit-flex: 0 0 50%;
+    flex: 0 0 50%;
+}
+
+.row .grid.three {
+    -webkit-flex: 0 0 25%;
+    flex: 0 0 25%;
+}
+
+.row .grid.four {
+    -webkit-flex: 0 0 33.33333%;
+    flex: 0 0 33.33333%;
+}
+
+.row .grid.eight {
+    -webkit-flex: 0 0 66.66666%;
+    flex: 0 0 66.66666%;
+}
+
+.row .grid.nine {
+    -webkit-flex: 0 0 75%;
+    flex: 0 0 75%;
+}
+
+.row .grid.twelve {
+    -webkit-flex: 0 0 100%;
+    flex: 0 0 100%;
+}
+
+.grid.gutter {
+    padding-right: 20px;
+}
+
+/* MailChimp overrides */
+#mc_embed_signup {
+    background: none !important;
+}
+
+#mc_embed_signup input {
+    padding: 10px !important;
+    border: none !important;
+}
+
+#mc_embed_signup form {
+    padding: 0 !important;
+}
+
+#mc-embedded-subscribe.button {
+    margin-top: 10px !important;
+    height: auto !important;
+    line-height: revert !important;
+    padding: 10px !important;
+    font-weight: bold !important;
+    color: #1a1a1a !important;
+    background-color: yellow !important;
+}
+
+#mc-embedded-subscribe.button:hover {
+    cursor: pointer !important;
+    background-color: #ff5 !important;
+}
+
+/* Hugo overrides */
+.instagram-media {
+    min-width: initial !important;
+}
