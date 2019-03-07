@@ -474,16 +474,6 @@ fn wasm_package(lib: Lib, wasm_path: PathBuf, out_path: PathBuf)
     }
 }
 
-#[test]
-fn test_wasm_package() {
-    let actual = wasm_package(
-        Lib::WasmBindgen,
-        PathBuf::from("/Users/ender/Projects/wozm/examples/wasm-pack-percy/target/wasm32-unknown-unknown/release/wasm_pack_percy.wasm"),
-        PathBuf::from("/Users/ender/.woz/bindings"),
-    );
-    actual.unwrap();
-}
-
 // TODO replace Box<Error> with an enum of all the possible errors
 fn main() -> Result<(), Box<Error>>{
     let handlebars = load_templates()?;
