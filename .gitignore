@@ -2,7 +2,6 @@ env-dev
 env-qa
 env-prod
 notes.org
-foundry/target/
 cli/target/
 examples/*/target
 .DS_Store
