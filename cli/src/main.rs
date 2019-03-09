@@ -1,31 +1,12 @@
 //! The cli used to interact with the woz service.
-//!
-//! # Usage
-//!
-//! Install from the [woz site](https://woz.sh) and run the following.
-//!
-//! ```
-//! woz setup
-//! ```
-//!
-//! Follow the instructions to activate your account. Now initialize the current directory to make a woz app.
-//!
-//! ```
-//! woz init
-//! ```
-//!
-//! To deploy to your space:
-//!
-//! ```
-//! woz deploy
-//! ```
 
 use std::collections::HashMap;
 use std::io;
-use std::io::prelude::*;
+// use std::io::prelude::*;
 use std::io::{stdin, stdout, Write};
-use std::fs::File;
 use std::path::PathBuf;
+use std::io::Read;
+use std::fs::File;
 use std::fs;
 use std::str;
 use std::error::Error;
@@ -38,6 +19,8 @@ use toml;
 #[macro_use]
 extern crate clap;
 use clap::App;
+
+use termion::input::TermRead;
 
 #[macro_use]
 extern crate serde_derive;
@@ -217,63 +200,71 @@ fn login(client: &CognitoIdentityProviderClient, username: String, password: Str
     client.initiate_auth(request)
 }
 
+fn prompt_username_password() -> (String, String) {
+    let stdout = stdout();
+    let mut stdout = stdout.lock();
+    let stdin = stdin();
+    let mut stdin = stdin.lock();
+
+    stdout.write_all(b"Username: ").unwrap();
+    stdout.flush().expect("Error");
+    let username = stdin.read_line().expect("Fail").unwrap();
+
+    stdout.write_all(b"Password: ").unwrap();
+    stdout.flush().expect("Error");
+    let password = stdin.read_passwd(&mut stdout)
+        .ok()
+        .expect("No password")
+        .unwrap();
+    // For some reason read_passwd doesn't add a newline
+    println!();
+
+    (username, password)
+}
+
+fn prompt_email() -> String {
+    let stdout = stdout();
+    let mut stdout = stdout.lock();
+    let stdin = stdin();
+    let mut stdin = stdin.lock();
+
+    stdout.write_all(b"Email: ").unwrap();
+    stdout.flush().expect("Error");
+    stdin.read_line().expect("Fail").unwrap()
+}
+
 #[derive(Debug, Clone)]
-struct SignupFormValues {
+struct SignupValues {
     email: String,
     username: String,
     password: String,
 }
 
-fn signup_form() -> SignupFormValues {
-    // TODO validate input
-    println!("Entering setup...");
-    print!("Please enter a username: ");
-    stdout().flush().expect("Error");
-    let username_buffer = &mut String::new();
-    stdin().read_line(username_buffer).expect("Fail");
-    let username = username_buffer.trim_end();
+fn prompt_signup() -> SignupValues {
+    println!("Please enter the following information");
+    let (username, password) = prompt_username_password();
+    let email = prompt_email();
 
-    print!("Please enter a password: ");
-    stdout().flush().expect("Error");
-    let password_buffer = &mut String::new();
-    stdin().read_line(password_buffer).expect("Fail");
-    let password = password_buffer.trim_end();
-
-    print!("Please enter a email: ");
-    stdout().flush().expect("Error");
-    let email_buffer = &mut String::new();
-    stdin().read_line(email_buffer).expect("Fail");
-    let email = email_buffer.trim_end();
-
-    SignupFormValues {
+    SignupValues {
         email: email.to_owned(),
         username: username.to_owned(),
         password: password.to_owned()
     }
 }
 
-fn prompt_login() -> Credentials {
-    print!("Please enter a username: ");
-    stdout().flush().expect("Error");
-    let username_buffer = &mut String::new();
-    stdin().read_line(username_buffer).expect("Fail");
-    let username = username_buffer.trim_end();
+struct Credentials {
+    username: String,
+    password: String,
+}
 
-    print!("Please enter a password: ");
-    stdout().flush().expect("Error");
-    let password_buffer = &mut String::new();
-    stdin().read_line(password_buffer).expect("Fail");
-    let password = password_buffer.trim_end();
+fn prompt_login() -> Credentials {
+    print!("Please login to continue: ");
+    let (username, password) = prompt_username_password();
 
     Credentials {
         username: username.to_owned(),
         password: password.to_owned(),
     }
-}
-
-struct Credentials {
-    username: String,
-    password: String,
 }
 
 type IdentityID = String;
@@ -386,8 +377,6 @@ fn store_identity_id(home_path: &PathBuf, id: &str) {
     f.write_all(id.as_bytes()).unwrap();
 }
 
-// TODO inline all the templates and register them with handlebars
-// TODO can we lazy_static all of these?
 const INDEX_TEMPLATE: &str = include_str!("templates/index.html");
 const MANIFEST_TEMPLATE: &str = include_str!("templates/manifest.json");
 const SERVICE_WORKER_JS_TEMPLATE: &str = include_str!("templates/serviceworker.js");
@@ -517,15 +506,14 @@ fn main() -> Result<(), Box<Error>>{
             // 3. A configured dotfile
             Command::Setup => {
                 // TODO first check if there is an existing installation
-                let values = signup_form();
-                dbg!(values.clone());
+                let values = prompt_signup();
                 let client = CognitoIdentityProviderClient::new(Region::UsWest2);
                 signup(client, values.email, values.username, values.password)
                     .sync()
                     .map_err(|e| {
                         let msg = match e {
                             SignUpError::InvalidParameter(msg) => msg,
-                            _ => String::from("An unknown error has occurred")
+                            _ => String::from(e.description())
                         };
                         println!("{}", msg);
                     })
