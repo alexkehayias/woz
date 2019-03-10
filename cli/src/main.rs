@@ -29,13 +29,13 @@ use rusoto_cognito_identity::*;
 use rusoto_cognito_idp::*;
 use rusoto_s3::*;
 
-use handlebars::Handlebars;
-
 mod prompt;
 mod account;
 mod config;
+mod template;
 
 use config::*;
+use template::load_templates;
 
 
 fn default_home_path() -> Result<PathBuf, Box<Error>> {
@@ -152,35 +152,6 @@ fn store_identity_id(home_path: &PathBuf, id: &str) {
     fs::create_dir_all(home_path).unwrap();
     let mut f = File::create(&file_path).unwrap();
     f.write_all(id.as_bytes()).unwrap();
-}
-
-const INDEX_TEMPLATE: &str = include_str!("templates/index.html");
-const MANIFEST_TEMPLATE: &str = include_str!("templates/manifest.json");
-const SERVICE_WORKER_JS_TEMPLATE: &str = include_str!("templates/serviceworker.js");
-
-fn load_templates() -> Result<Handlebars, Box<Error>> {
-    let mut handlebars = Handlebars::new();
-    handlebars.set_strict_mode(true);
-    handlebars.register_template_string("index", INDEX_TEMPLATE)?;
-    handlebars.register_template_string("manifest", MANIFEST_TEMPLATE)?;
-    handlebars.register_template_string("sw.js", SERVICE_WORKER_JS_TEMPLATE)?;
-    Ok(handlebars)
-}
-
-#[test]
-fn test_index_templates() {
-    let loader = load_templates().expect("Failed to load templates");
-    let res = loader.render(
-        "index",
-        &json!({
-            "name": "Test App",
-            "author": "Alex Kehayias",
-            "description": "Description here",
-            "loader_js_path": "./loader.js",
-            "sw_js_path": "./sw.js",
-            "wasm_path": "./app.wasm",
-        }));
-    dbg!(res.expect("Failed to render"));
 }
 
 #[derive(Debug)]
