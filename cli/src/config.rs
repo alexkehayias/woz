@@ -1,3 +1,4 @@
+use std::error::Error;
 use std::path::PathBuf;
 use serde::{Deserialize, Deserializer};
 
@@ -86,4 +87,25 @@ impl Default for Config {
             wasm_path: PathBuf::new(),
         }
     }
+}
+
+pub fn default_home_path() -> Result<PathBuf, Box<Error>> {
+    let home: String = std::env::var_os("XDG_CONFIG_HOME")
+        .or_else(|| std::env::var_os("HOME"))
+        .map(|v| v.into_string().expect("Unable to parse $HOME to string"))
+        .expect("No home");
+    let mut buf = PathBuf::new();
+    buf.push(home);
+    buf.push(".woz");
+    Ok(buf)
+}
+
+#[test]
+// TODO only compile on macOS
+fn default_home_path_test() {
+    let user = std::env::var_os("USER")
+        .map(|v| v.into_string().expect("Could not parse $USER to string"))
+        .expect("Could not get a $USER");
+    let path_str = format!("/Users/{}/.woz", user);
+    assert_eq!(PathBuf::from(path_str), default_home_path().unwrap());
 }
