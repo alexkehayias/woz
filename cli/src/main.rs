@@ -9,8 +9,6 @@ use std::str;
 use std::error::Error;
 use std::default::Default;
 use std::env;
-use std::fmt;
-use std::process;
 use toml;
 
 #[macro_use]
@@ -33,9 +31,11 @@ mod prompt;
 mod account;
 mod config;
 mod template;
+mod package;
 
 use config::*;
 use template::load_templates;
+use package::wasm_package;
 
 
 fn default_home_path() -> Result<PathBuf, Box<Error>> {
@@ -152,63 +152,6 @@ fn store_identity_id(home_path: &PathBuf, id: &str) {
     fs::create_dir_all(home_path).unwrap();
     let mut f = File::create(&file_path).unwrap();
     f.write_all(id.as_bytes()).unwrap();
-}
-
-#[derive(Debug)]
-struct WasmPackageError;
-
-impl fmt::Display for WasmPackageError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "Failed to generate wasm package")
-    }
-}
-
-impl Error for WasmPackageError {
-    fn description(&self) -> &str {
-        "Failed to generate wasm package"
-    }
-}
-
-struct WasmPackage {
-    lib: Lib,
-    js: PathBuf,
-    wasm: PathBuf,
-}
-
-impl WasmPackage {
-    fn new(lib: Lib, wasm_path: PathBuf, js_path: PathBuf) -> Self {
-        WasmPackage {lib: lib, wasm: wasm_path, js: js_path}
-    }
-}
-
-/// Generates a js file that manages the interop between js and wasm
-fn wasm_package(lib: Lib, wasm_path: PathBuf, out_path: PathBuf)
-                -> Result<WasmPackage, WasmPackageError> {
-    match lib {
-        Lib::WasmBindgen => {
-            let command = format!(
-                "wasm-bindgen {} --no-typescript --no-modules --out-dir {} --out-name app",
-                wasm_path.into_os_string().into_string().unwrap(),
-                out_path.clone().into_os_string().into_string().unwrap()
-            );
-
-            let output = process::Command::new("sh")
-                .arg("-c")
-                .arg(command)
-                .output()
-                .expect("failed to execute process");
-            dbg!(output);
-
-            let mut js_path = out_path.clone();
-            js_path.push("app.js");
-
-            let mut wasm_path = out_path.clone();
-            wasm_path.push("app_bg.wasm");
-
-            Ok(WasmPackage::new(lib, wasm_path, js_path))
-        },
-        _ => Err(WasmPackageError)
-    }
 }
 
 // TODO replace Box<Error> with an enum of all the possible errors
