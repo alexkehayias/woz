@@ -1,6 +1,5 @@
 //! The cli used to interact with the woz service.
 
-use std::collections::HashMap;
 use std::io;
 use std::io::{Read, Write};
 use std::path::PathBuf;
@@ -20,108 +19,24 @@ use clap::App;
 
 #[macro_use]
 extern crate serde_derive;
-use serde::{Deserialize, Deserializer};
 #[macro_use]
 extern crate serde_json;
 
-use rusoto_core::{Region, RusotoFuture, ByteStream};
+use rusoto_core::{Region, ByteStream};
 use rusoto_core::request::HttpClient;
 use rusoto_credential::StaticProvider;
 use rusoto_cognito_identity::*;
-use rusoto_cognito_idp::CognitoIdentityProvider;
 use rusoto_cognito_idp::*;
 use rusoto_s3::*;
 
 use handlebars::Handlebars;
 
 mod prompt;
+mod account;
+mod config;
 
+use config::*;
 
-const SCHEME: &str = env!("WOZ_WEB_SCHEME");
-const NETLOC: &str = env!("WOZ_WEB_NETLOC");
-const IDENTITY_POOL_ID: &str = env!("WOZ_IDENTITY_POOL_ID");
-const IDENTITY_POOL_URL: &str = env!("WOZ_IDENTITY_POOL_URL");
-const CLIENT_ID: &str = env!("WOZ_CLIENT_ID");
-const S3_BUCKET_NAME: &str = env!("WOZ_S3_BUCKET_NAME");
-
-#[derive(Debug, Serialize)]
-enum Lib {
-    WasmBindgen,
-    StdWeb,
-    Unknown(String)
-}
-
-impl<'de> Deserialize<'de> for Lib {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-        where D: Deserializer<'de>
-    {
-        let s = String::deserialize(deserializer)?;
-        Ok(match s.as_str() {
-            "wasm-bindgen" => Lib::WasmBindgen,
-            "std-web" => Lib::StdWeb,
-            _ => Lib::Unknown(s),
-        })
-    }
-}
-
-#[derive(Debug, Serialize)]
-enum Environment {
-    Release,
-    Development,
-    Unknown(String)
-}
-
-impl<'de> Deserialize<'de> for Environment {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-        where D: Deserializer<'de>
-    {
-        let s = String::deserialize(deserializer)?;
-        Ok(match s.as_str() {
-            "release" => Environment::Release,
-            "development" => Environment::Development,
-            _ => Environment::Unknown(s),
-        })
-    }
-}
-
-#[derive(Debug, Serialize)]
-struct ProjectId(String);
-
-impl<'de> Deserialize<'de> for ProjectId {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-        where D: Deserializer<'de>
-    {
-        let s = String::deserialize(deserializer)?;
-        if s.chars().all(char::is_alphanumeric) {
-            Ok(ProjectId(s))
-        } else {
-            Err(serde::de::Error::custom(String::from("must be alphanumeric")))
-        }
-    }
-}
-
-#[derive(Debug, Deserialize)]
-struct Config {
-    project_id: ProjectId,
-    lib: Option<Lib>,
-    name: String,
-    short_name: Option<String>,
-    env: Option<Environment>,
-    wasm_path: PathBuf
-}
-
-impl Default for Config {
-    fn default() -> Self {
-        Self {
-            project_id: ProjectId(String::from("default")),
-            lib: Some(Lib::WasmBindgen),
-            name: String::from("My App"),
-            short_name: Some(String::from("App")),
-            env: Some(Environment::Release),
-            wasm_path: PathBuf::new(),
-        }
-    }
-}
 
 fn default_home_path() -> Result<PathBuf, Box<Error>> {
     let home: String = std::env::var_os("XDG_CONFIG_HOME")
@@ -173,75 +88,10 @@ impl From<&str> for Command {
 }
 
 
-fn signup(client: CognitoIdentityProviderClient, email: String, username: String, password: String) -> RusotoFuture<SignUpResponse, SignUpError> {
-    // Build the request
-    let mut request = SignUpRequest::default();
-    request.username = username;
-    request.password = password;
-    request.client_id = String::from(CLIENT_ID);
-    let email = AttributeType {
-        name: String::from("email"),
-        value: Some(email)
-    };
-    request.user_attributes = Some(vec![email]);
-
-    // Make the request
-    client.sign_up(request)
-}
-
-fn login(client: &CognitoIdentityProviderClient, username: String, password: String) -> RusotoFuture<InitiateAuthResponse, InitiateAuthError> {
-    let mut request = InitiateAuthRequest::default();
-    request.auth_flow = String::from("USER_PASSWORD_AUTH");
-    let mut auth_params = HashMap::new();
-    auth_params.insert(String::from("USERNAME"), username);
-    auth_params.insert(String::from("PASSWORD"), password);
-    request.client_id = String::from(CLIENT_ID);
-    request.auth_parameters = Some(auth_params);
-    client.initiate_auth(request)
-}
-
-type IdentityID = String;
-type RefreshToken = String;
-
-fn refresh_auth(client: &CognitoIdentityProviderClient, refresh_token: &str)
-                -> RusotoFuture<InitiateAuthResponse, InitiateAuthError> {
-    let mut auth_params = HashMap::new();
-    auth_params.insert(String::from("REFRESH_TOKEN"), refresh_token.to_string());
-    let req = InitiateAuthRequest {
-        client_id: CLIENT_ID.to_string(),
-        auth_flow: String::from("REFRESH_TOKEN_AUTH"),
-        auth_parameters: Some(auth_params),
-        ..Default::default()
-    };
-    client.initiate_auth(req)
-}
-
-fn identity_id(client: &CognitoIdentityClient, id_token: &str)
-               -> RusotoFuture<GetIdResponse, GetIdError> {
-    let mut logins = HashMap::new();
-    logins.insert(IDENTITY_POOL_URL.to_string(), id_token.to_owned());
-
-    let mut req = GetIdInput::default();
-    req.identity_pool_id = IDENTITY_POOL_ID.to_string();
-    req.logins = Some(logins);
-    client.get_id(req)
-}
-
-fn aws_credentials(client: &CognitoIdentityClient, identity_id: &str, id_token: &str)
-                   -> RusotoFuture<GetCredentialsForIdentityResponse,
-                                  GetCredentialsForIdentityError> {
-    let mut logins = HashMap::new();
-    logins.insert(IDENTITY_POOL_URL.to_string(), id_token.to_owned());
-
-    let mut req = GetCredentialsForIdentityInput::default();
-    req.identity_id = identity_id.to_owned();
-    req.logins = Some(logins);
-    client.get_credentials_for_identity(req)
-}
 
 /// Attempt to get a refresh_token token, prompting the user to log in if
 /// refresh token is expired and stores it locally.
-fn ensure_refresh_token(home_path: &PathBuf, client: &CognitoIdentityProviderClient) -> RefreshToken {
+fn ensure_refresh_token(home_path: &PathBuf, client: &CognitoIdentityProviderClient) -> String {
     let mut path = home_path.clone();
     path.push(".refresh_token");
     dbg!(path.clone());
@@ -250,7 +100,7 @@ fn ensure_refresh_token(home_path: &PathBuf, client: &CognitoIdentityProviderCli
         .or_else::<io::Error, _>(|err| {
             dbg!(err);
             let creds = prompt::login();
-            let token = login(&client, creds.username, creds.password).sync()
+            let token = account::login(&client, creds.username, creds.password).sync()
                 .and_then(|resp| {
                     let token = resp
                         .authentication_result.expect("Failed")
@@ -268,13 +118,13 @@ fn ensure_refresh_token(home_path: &PathBuf, client: &CognitoIdentityProviderCli
 }
 
 fn ensure_identity_id(home_path: &PathBuf, client: &CognitoIdentityClient, id_token: &str)
-                      -> IdentityID {
+                      -> String {
     let mut path = home_path.clone();
     path.push(".identity");
 
     fs::read_to_string(path)
         .or_else::<io::Error, _>(|_| {
-            let id = identity_id(client, id_token)
+            let id = account::identity_id(client, id_token)
                 .sync()
                 .expect("Failed to get identity ID")
                 .identity_id.expect("No identity ID");
@@ -441,15 +291,9 @@ fn main() -> Result<(), Box<Error>>{
                 // TODO first check if there is an existing installation
                 let values = prompt::signup();
                 let client = CognitoIdentityProviderClient::new(Region::UsWest2);
-                signup(client, values.email, values.username, values.password)
+                account::signup(client, values.email, values.username, values.password)
                     .sync()
-                    .map_err(|e| {
-                        let msg = match e {
-                            SignUpError::InvalidParameter(msg) => msg,
-                            _ => String::from(e.description())
-                        };
-                        println!("{}", msg);
-                    })
+                    .map_err(|e| println!("{}", e.description()))
                     .and_then(|resp| {
                         let user_id = resp.user_sub;
                         store_user_id(&home_path, &user_id);
@@ -479,12 +323,12 @@ fn main() -> Result<(), Box<Error>>{
                 let id_client = CognitoIdentityClient::new(Region::UsWest2);
 
                 let refresh_token = ensure_refresh_token(&home_path, &id_provider_client);
-                let id_token = refresh_auth(&id_provider_client, &refresh_token)
+                let id_token = account::refresh_auth(&id_provider_client, &refresh_token)
                     .sync()
                     .or_else(|err| {
                         dbg!(err);
                         let creds = prompt::login();
-                        login(&id_provider_client, creds.username, creds.password).sync()
+                        account::login(&id_provider_client, creds.username, creds.password).sync()
                             .and_then(|resp| {
                                 let token = resp.clone()
                                     .authentication_result.expect("Failed")
@@ -496,7 +340,7 @@ fn main() -> Result<(), Box<Error>>{
                     .authentication_result.expect("No auth result")
                     .id_token.expect("No access token");
                 let identity_id = ensure_identity_id(&home_path, &id_client, &id_token);
-                let aws_token = aws_credentials(&id_client, &identity_id, &id_token)
+                let aws_token = account::aws_credentials(&id_client, &identity_id, &id_token)
                     .sync()
                     .expect("Failed to fetch AWS credentials");
 
