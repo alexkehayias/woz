@@ -49,12 +49,6 @@ fn default_home_path() -> Result<PathBuf, Box<Error>> {
     Ok(buf)
 }
 
-fn username(home_path: PathBuf) -> Result<String, std::io::Error> {
-    let mut path = home_path;
-    path.push(".username");
-    fs::read_to_string(path)
-}
-
 #[test]
 // TODO only compile on macOS
 fn default_home_path_test() {
@@ -276,8 +270,6 @@ fn main() -> Result<(), Box<Error>>{
         })
         .expect("Failed to load conf");
     let conf: Config = toml::from_str(&conf_str)?;
-
-    // let username = username(home_path.clone());
 
     let ProjectId(project_id) = conf.project_id;
 
