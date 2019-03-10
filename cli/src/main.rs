@@ -2,10 +2,8 @@
 
 use std::collections::HashMap;
 use std::io;
-// use std::io::prelude::*;
-use std::io::{stdin, stdout, Write};
+use std::io::{Read, Write};
 use std::path::PathBuf;
-use std::io::Read;
 use std::fs::File;
 use std::fs;
 use std::str;
@@ -19,8 +17,6 @@ use toml;
 #[macro_use]
 extern crate clap;
 use clap::App;
-
-use termion::input::TermRead;
 
 #[macro_use]
 extern crate serde_derive;
@@ -37,6 +33,8 @@ use rusoto_cognito_idp::*;
 use rusoto_s3::*;
 
 use handlebars::Handlebars;
+
+mod prompt;
 
 
 const SCHEME: &str = env!("WOZ_WEB_SCHEME");
@@ -154,6 +152,7 @@ fn default_home_path_test() {
 
 enum Command {
     Init,
+    NewProject,
     Setup,
     Deploy,
     Update,
@@ -164,6 +163,7 @@ impl From<&str> for Command {
     fn from(s: &str) -> Command {
         match s {
             "init" => Command::Init,
+            "new" => Command::NewProject,
             "setup" => Command::Setup,
             "deploy" => Command::Deploy,
             "update" => Command::Update,
@@ -198,73 +198,6 @@ fn login(client: &CognitoIdentityProviderClient, username: String, password: Str
     request.client_id = String::from(CLIENT_ID);
     request.auth_parameters = Some(auth_params);
     client.initiate_auth(request)
-}
-
-fn prompt_username_password() -> (String, String) {
-    let stdout = stdout();
-    let mut stdout = stdout.lock();
-    let stdin = stdin();
-    let mut stdin = stdin.lock();
-
-    stdout.write_all(b"Username: ").unwrap();
-    stdout.flush().expect("Error");
-    let username = stdin.read_line().expect("Fail").unwrap();
-
-    stdout.write_all(b"Password: ").unwrap();
-    stdout.flush().expect("Error");
-    let password = stdin.read_passwd(&mut stdout)
-        .ok()
-        .expect("No password")
-        .unwrap();
-    // For some reason read_passwd doesn't add a newline
-    println!();
-
-    (username, password)
-}
-
-fn prompt_email() -> String {
-    let stdout = stdout();
-    let mut stdout = stdout.lock();
-    let stdin = stdin();
-    let mut stdin = stdin.lock();
-
-    stdout.write_all(b"Email: ").unwrap();
-    stdout.flush().expect("Error");
-    stdin.read_line().expect("Fail").unwrap()
-}
-
-#[derive(Debug, Clone)]
-struct SignupValues {
-    email: String,
-    username: String,
-    password: String,
-}
-
-fn prompt_signup() -> SignupValues {
-    println!("Please enter the following information");
-    let (username, password) = prompt_username_password();
-    let email = prompt_email();
-
-    SignupValues {
-        email: email.to_owned(),
-        username: username.to_owned(),
-        password: password.to_owned()
-    }
-}
-
-struct Credentials {
-    username: String,
-    password: String,
-}
-
-fn prompt_login() -> Credentials {
-    print!("Please login to continue: ");
-    let (username, password) = prompt_username_password();
-
-    Credentials {
-        username: username.to_owned(),
-        password: password.to_owned(),
-    }
 }
 
 type IdentityID = String;
@@ -316,7 +249,7 @@ fn ensure_refresh_token(home_path: &PathBuf, client: &CognitoIdentityProviderCli
     fs::read_to_string(path)
         .or_else::<io::Error, _>(|err| {
             dbg!(err);
-            let creds = prompt_login();
+            let creds = prompt::login();
             let token = login(&client, creds.username, creds.password).sync()
                 .and_then(|resp| {
                     let token = resp
@@ -506,7 +439,7 @@ fn main() -> Result<(), Box<Error>>{
             // 3. A configured dotfile
             Command::Setup => {
                 // TODO first check if there is an existing installation
-                let values = prompt_signup();
+                let values = prompt::signup();
                 let client = CognitoIdentityProviderClient::new(Region::UsWest2);
                 signup(client, values.email, values.username, values.password)
                     .sync()
@@ -525,9 +458,14 @@ fn main() -> Result<(), Box<Error>>{
                     .expect("An error occured");
                 println!("Please check your inbox for an email to verify your account.");
             },
+            Command::NewProject => {
+                // TODO Create a local config file
+                // TODO Create a project landing page in S3
+                // TODO Create the .woz home directory
+                // Print the url
+            },
             // Init should result in
             // 1. A config file in the current directory
-            // 2. A new subdomain on woz
             Command::Init => {
                 println!("Init...");
                 // TODO Create a local config file
@@ -545,7 +483,7 @@ fn main() -> Result<(), Box<Error>>{
                     .sync()
                     .or_else(|err| {
                         dbg!(err);
-                        let creds = prompt_login();
+                        let creds = prompt::login();
                         login(&id_provider_client, creds.username, creds.password).sync()
                             .and_then(|resp| {
                                 let token = resp.clone()
