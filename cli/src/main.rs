@@ -6,19 +6,19 @@ use std::path::PathBuf;
 use std::fs::File;
 use std::fs;
 use std::str;
-use std::error::Error;
 use std::default::Default;
 use std::env;
+use std::error::Error as StdError;
 use toml;
 
-#[macro_use]
-extern crate clap;
+#[macro_use] extern crate clap;
 use clap::App;
 
-#[macro_use]
-extern crate serde_derive;
-#[macro_use]
-extern crate serde_json;
+#[macro_use] extern crate serde_derive;
+#[macro_use] extern crate serde_json;
+
+#[macro_use] extern crate failure;
+use failure::Error;
 
 use rusoto_core::{Region, ByteStream};
 use rusoto_core::request::HttpClient;
@@ -59,8 +59,6 @@ impl From<&str> for Command {
         }
     }
 }
-
-
 
 /// Attempt to get a refresh_token token, prompting the user to log in if
 /// refresh token is expired and stores it locally.
@@ -110,8 +108,6 @@ fn ensure_identity_id(home_path: &PathBuf, client: &CognitoIdentityClient, id_to
 fn store_token(home_path: &PathBuf, refresh_token: &str) {
     let mut file_path = home_path.clone();
     file_path.push(".refresh_token");
-    dbg!(file_path.clone());
-
     fs::create_dir_all(home_path).unwrap();
     let mut f = File::create(&file_path).unwrap();
     f.write_all(refresh_token.as_bytes()).unwrap();
@@ -134,7 +130,7 @@ fn store_identity_id(home_path: &PathBuf, id: &str) {
 }
 
 // TODO replace Box<Error> with an enum of all the possible errors
-fn main() -> Result<(), Box<Error>>{
+fn main() -> Result<(), Error>{
     let handlebars = load_templates()?;
 
     let yaml = load_yaml!("cli.yaml");

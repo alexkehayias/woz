@@ -1,6 +1,6 @@
-use std::error::Error;
 use std::path::PathBuf;
 use serde::{Deserialize, Deserializer};
+use failure::Error;
 
 
 pub const SCHEME: &str = env!("WOZ_WEB_SCHEME");
@@ -89,7 +89,7 @@ impl Default for Config {
     }
 }
 
-pub fn default_home_path() -> Result<PathBuf, Box<Error>> {
+pub fn default_home_path() -> Result<PathBuf, Error> {
     let home: String = std::env::var_os("XDG_CONFIG_HOME")
         .or_else(|| std::env::var_os("HOME"))
         .map(|v| v.into_string().expect("Unable to parse $HOME to string"))

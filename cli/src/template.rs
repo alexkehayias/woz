@@ -1,4 +1,4 @@
-use std::error::Error;
+use failure::Error;
 use handlebars::Handlebars;
 
 
@@ -6,7 +6,7 @@ const INDEX_TEMPLATE: &str = include_str!("templates/index.html");
 const MANIFEST_TEMPLATE: &str = include_str!("templates/manifest.json");
 const SERVICE_WORKER_JS_TEMPLATE: &str = include_str!("templates/serviceworker.js");
 
-pub fn load_templates() -> Result<Handlebars, Box<Error>> {
+pub fn load_templates() -> Result<Handlebars, Error> {
     let mut handlebars = Handlebars::new();
     handlebars.set_strict_mode(true);
     handlebars.register_template_string("index", INDEX_TEMPLATE)?;
