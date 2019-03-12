@@ -129,9 +129,11 @@ fn store_identity_id(home_path: &PathBuf, id: &str) {
     f.write_all(id.as_bytes()).unwrap();
 }
 
-// TODO replace Box<Error> with an enum of all the possible errors
-fn main() -> Result<(), Error>{
-    let handlebars = load_templates()?;
+fn run() -> Result<(), Error> {
+    let handlebars = load_templates().or_else(|e| {
+        println!("Failed to load templates: {}", e);
+        Err(e)
+    })?;
 
     let yaml = load_yaml!("cli.yaml");
     let app = App::from_yaml(yaml);
@@ -156,9 +158,11 @@ fn main() -> Result<(), Error>{
         .or_else(|e| {
             println!("Couldn't find woz config at {}", conf_path.to_str().unwrap());
             Err(e)
-        })
-        .expect("Failed to load conf");
-    let conf: Config = toml::from_str(&conf_str)?;
+        })?;
+    let conf: Config = toml::from_str(&conf_str).or_else(|e| {
+        println!("Failed to parse woz config");
+        Err(e)
+    })?;
 
     let ProjectId(project_id) = conf.project_id;
 
@@ -174,11 +178,14 @@ fn main() -> Result<(), Error>{
                 let client = CognitoIdentityProviderClient::new(Region::UsWest2);
                 account::signup(client, values.email, values.username, values.password)
                     .sync()
-                    .map_err(|e| println!("{}", e.description()))
                     .and_then(|resp| {
                         let user_id = resp.user_sub;
                         store_user_id(&home_path, &user_id);
                         Ok(())
+                    })
+                    .or_else(|e| {
+                        println!("Signup failed {}", e);
+                        Err(e)
                     })
                     .expect("An error occured");
                 println!("Please check your inbox for an email to verify your account.");
@@ -207,9 +214,14 @@ fn main() -> Result<(), Error>{
                 let id_token = account::refresh_auth(&id_provider_client, &refresh_token)
                     .sync()
                     .or_else(|err| {
-                        dbg!(err);
+                        println!("Getting refresh token failed {}", err);
                         let creds = prompt::login();
-                        account::login(&id_provider_client, creds.username, creds.password).sync()
+                        account::login(&id_provider_client, creds.username, creds.password)
+                            .sync()
+                            .or_else(|e| {
+                                println!("Login failed {}", e);
+                                Err(e)
+                            })
                             .and_then(|resp| {
                                 let token = resp.clone()
                                     .authentication_result.expect("Failed")
@@ -339,6 +351,11 @@ fn main() -> Result<(), Error>{
             // specified, but it hasn't been implemented
             _ => unimplemented!()
         };
-    }
+    };
     Ok(())
+}
+
+// TODO replace Box<Error> with an enum of all the possible errors
+fn main() {
+    run().map_err(|e| println!("{}", e)).ok();
 }
