@@ -44,12 +44,11 @@ pub fn wasm_package(lib: Lib, wasm_path: PathBuf, out_path: PathBuf)
                 out_path.clone().into_os_string().into_string().unwrap()
             );
 
-            let output = process::Command::new("sh")
+            process::Command::new("sh")
                 .arg("-c")
                 .arg(command)
                 .output()
                 .expect("failed to execute process");
-            dbg!(output);
 
             let mut js_path = out_path.clone();
             js_path.push("app.js");

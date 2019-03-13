@@ -22,6 +22,8 @@ subcommands:
       about: Setup a woz.sh account and authentication
   - init:
       about: Initialize a new woz app in the current directory
+  - new:
+      about: Create a new woz project in the current directory
   - deploy:
       about: Deploy this version of the app
   - update:

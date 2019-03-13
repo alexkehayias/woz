@@ -17,8 +17,8 @@ use clap::App;
 #[macro_use] extern crate serde_derive;
 #[macro_use] extern crate serde_json;
 
-#[macro_use] extern crate failure;
 use failure::Error;
+use failure::ResultExt;
 
 use rusoto_core::{Region, ByteStream};
 use rusoto_core::request::HttpClient;
@@ -65,11 +65,9 @@ impl From<&str> for Command {
 fn ensure_refresh_token(home_path: &PathBuf, client: &CognitoIdentityProviderClient) -> String {
     let mut path = home_path.clone();
     path.push(".refresh_token");
-    dbg!(path.clone());
 
     fs::read_to_string(path)
-        .or_else::<io::Error, _>(|err| {
-            dbg!(err);
+        .or_else::<io::Error, _>(|_| {
             let creds = prompt::login();
             let token = account::login(&client, creds.username, creds.password).sync()
                 .and_then(|resp| {
@@ -78,8 +76,7 @@ fn ensure_refresh_token(home_path: &PathBuf, client: &CognitoIdentityProviderCli
                         .refresh_token.expect("Missing refresh token");
                     store_token(&home_path, &token);
                     Ok(token)})
-                .or_else::<io::Error, _>(|err| {
-                    dbg!(err);
+                .or_else::<io::Error, _>(|_| {
                     Ok(ensure_refresh_token(home_path, client))
                 })
                 .expect("Something went wrong");
@@ -130,10 +127,7 @@ fn store_identity_id(home_path: &PathBuf, id: &str) {
 }
 
 fn run() -> Result<(), Error> {
-    let handlebars = load_templates().or_else(|e| {
-        println!("Failed to load templates: {}", e);
-        Err(e)
-    })?;
+    let handlebars = load_templates().context("Failed to load templates")?;
 
     let yaml = load_yaml!("cli.yaml");
     let app = App::from_yaml(yaml);
@@ -143,26 +137,24 @@ fn run() -> Result<(), Error> {
     // default to the current directory
     let project_path = input.args.get("project")
         .map_or(env::current_dir(),
-                |arg| Ok(PathBuf::from(&arg.vals[0])))?;
+                |arg| Ok(PathBuf::from(&arg.vals[0])))
+        .context("Failed to get project path")?;
     println!("Using project path {}", project_path.to_str().unwrap());
 
     let home_path = input.args.get("home")
         .map_or(default_home_path(),
-                |arg| Ok(PathBuf::from(&arg.vals[0])))?;
+                |arg| Ok(PathBuf::from(&arg.vals[0])))
+        .context("Failed to get woz home path")?;
     println!("Using home path {}", home_path.to_str().unwrap());
 
     // Load the config if present or use default config
     let mut conf_path = project_path.clone();
     conf_path.push("woz.toml");
     let conf_str = fs::read_to_string(conf_path.clone())
-        .or_else(|e| {
-            println!("Couldn't find woz config at {}", conf_path.to_str().unwrap());
-            Err(e)
-        })?;
-    let conf: Config = toml::from_str(&conf_str).or_else(|e| {
-        println!("Failed to parse woz config");
-        Err(e)
-    })?;
+        .context(format!("Couldn't find woz config file at {}",
+                         conf_path.clone().to_str().unwrap()))?;
+    let conf: Config = toml::from_str(&conf_str)
+        .context("Failed to parse woz config")?;
 
     let ProjectId(project_id) = conf.project_id;
 
@@ -184,10 +176,9 @@ fn run() -> Result<(), Error> {
                         Ok(())
                     })
                     .or_else(|e| {
-                        println!("Signup failed {}", e);
+                        println!("Signup failed {}", e.description());
                         Err(e)
-                    })
-                    .expect("An error occured");
+                    })?;
                 println!("Please check your inbox for an email to verify your account.");
             },
             Command::NewProject => {
@@ -214,6 +205,7 @@ fn run() -> Result<(), Error> {
                 let id_token = account::refresh_auth(&id_provider_client, &refresh_token)
                     .sync()
                     .or_else(|err| {
+                        // TODO only login if the failure is due to auth error
                         println!("Getting refresh token failed {}", err);
                         let creds = prompt::login();
                         account::login(&id_provider_client, creds.username, creds.password)
@@ -229,15 +221,14 @@ fn run() -> Result<(), Error> {
                                 store_token(&home_path, &token);
                                 Ok(resp)})
                     })
-                    .expect("Failed to id token")
+                    .context("Failed to get id token")?
                     .authentication_result.expect("No auth result")
                     .id_token.expect("No access token");
                 let identity_id = ensure_identity_id(&home_path, &id_client, &id_token);
-                let aws_token = account::aws_credentials(&id_client, &identity_id, &id_token)
+                let aws_creds = account::aws_credentials(&id_client, &identity_id, &id_token)
                     .sync()
-                    .expect("Failed to fetch AWS credentials");
-
-                let aws_creds = aws_token.credentials.expect("Missing credentials");
+                    .context("Failed to fetch AWS credentials")?
+                    .credentials.expect("Missing credentials");
                 let creds_provider = StaticProvider::new(
                     aws_creds.access_key_id.expect("Missing access key"),
                     aws_creds.secret_key.expect("Missing secret key"),
@@ -247,7 +238,7 @@ fn run() -> Result<(), Error> {
 
                 let request_dispatcher = HttpClient::new();
                 let s3_client = S3Client::new_with(
-                    request_dispatcher.expect("Failed to make an HttpClient"),
+                    request_dispatcher.context("Failed to make an HttpClient")?,
                     creds_provider,
                     Region::UsWest2
                 );
@@ -255,7 +246,7 @@ fn run() -> Result<(), Error> {
                 let mut out_path = home_path.clone();
                 out_path.push(&project_id);
                 out_path.push("pkg");
-                fs::create_dir_all(&out_path).expect("Failed to make pkg directory");
+                fs::create_dir_all(&out_path).context("Failed to make pkg directory")?;
 
                 let mut wasm_path = project_path.clone();
                 wasm_path.push(conf.wasm_path);
@@ -281,7 +272,7 @@ fn run() -> Result<(), Error> {
                     conf.lib.unwrap(),
                     wasm_path,
                     out_path,
-                ).expect("Failed to generate wasm package");
+                ).context("Failed to generate wasm package")?;
 
                 // All app files will be prefixed in the s3 bucket by the user's
                 // cognito identity ID and project_id
@@ -290,22 +281,22 @@ fn run() -> Result<(), Error> {
                 let files = vec![
                     (format!("{}/index.html", key_prefix),
                      String::from("text/html"),
-                     index_template.expect("Failed to render index.html").into_bytes()),
+                     index_template.context("Failed to render index.html")?.into_bytes()),
                     (format!("{}/manifest.json", key_prefix),
                      String::from("application/manifest+json"),
-                     manifest_template.expect("Failed to render manifest.json").into_bytes()),
+                     manifest_template.context("Failed to render manifest.json")?.into_bytes()),
                     (format!("{}/sw.js", key_prefix),
                      String::from("application/javascript"),
-                     service_worker_template.expect("Failed to render sw.js").into_bytes()),
+                     service_worker_template.context("Failed to render sw.js")?.into_bytes()),
                     (format!("{}/app.js", key_prefix),
                      String::from("application/javascript"),
-                     fs::read_to_string(wasm_package.js).expect("Failed to read js file").into_bytes()),
+                     fs::read_to_string(wasm_package.js).context("Failed to read js file")?.into_bytes()),
                     (format!("{}/app.wasm", key_prefix),
                      String::from("application/wasm"),
                      {
-                         let mut f = File::open(wasm_package.wasm).expect("Failed to read wasm file");
+                         let mut f = File::open(wasm_package.wasm).context("Failed to read wasm file")?;
                          let mut buffer = Vec::new();
-                         f.read_to_end(&mut buffer).expect("Failed to read to bytes");
+                         f.read_to_end(&mut buffer).context("Failed to read to bytes")?;
                          buffer
                      }),
                 ];
@@ -313,7 +304,7 @@ fn run() -> Result<(), Error> {
                 for (file_name, mimetype, body) in files.into_iter() {
                     let req = PutObjectRequest {
                         bucket: String::from(S3_BUCKET_NAME),
-                        key: file_name,
+                        key: file_name.clone(),
                         body: Some(ByteStream::from(body)),
                         content_type: Some(mimetype),
                         ..Default::default()
@@ -321,19 +312,7 @@ fn run() -> Result<(), Error> {
 
                     s3_client.put_object(req)
                         .sync()
-                        .map_err(|err| {
-                            match err {
-                                PutObjectError::Unknown(resp) => {
-                                    dbg!(str::from_utf8(&resp.body)
-                                         .expect("Failed to parse response body"));
-                                },
-                                PutObjectError::Credentials(e) => {dbg!(e);},
-                                _ => {dbg!("err");}
-                            };
-                            panic!("ut oh");
-                        })
-                        .and_then(|resp| Ok(dbg!(resp)))
-                        .ok();
+                        .context(format!("Failed to upload file to S3: {}", file_name))?;
                 };
 
                 let location = format!(
