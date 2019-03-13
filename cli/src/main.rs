@@ -74,7 +74,7 @@ fn ensure_refresh_token(home_path: &PathBuf, client: &CognitoIdentityProviderCli
                     let token = resp
                         .authentication_result.expect("Failed")
                         .refresh_token.expect("Missing refresh token");
-                    store_token(&home_path, &token);
+                    home_cache(&home_path, ".refresh_token", &token);
                     Ok(token)})
                 .or_else::<io::Error, _>(|_| {
                     Ok(ensure_refresh_token(home_path, client))
@@ -96,34 +96,18 @@ fn ensure_identity_id(home_path: &PathBuf, client: &CognitoIdentityClient, id_to
                 .sync()
                 .expect("Failed to get identity ID")
                 .identity_id.expect("No identity ID");
-            store_identity_id(&home_path, &id);
+            home_cache(&home_path, ".identity", &id);
             Ok(id)
         })
         .unwrap()
 }
 
-fn store_token(home_path: &PathBuf, refresh_token: &str) {
+fn home_cache(home_path: &PathBuf, file_name: &str, value: &str) {
     let mut file_path = home_path.clone();
-    file_path.push(".refresh_token");
+    file_path.push(file_name);
     fs::create_dir_all(home_path).unwrap();
     let mut f = File::create(&file_path).unwrap();
-    f.write_all(refresh_token.as_bytes()).unwrap();
-}
-
-fn store_user_id(home_path: &PathBuf, user_id: &str) {
-    let mut file_path = home_path.clone();
-    file_path.push(".user");
-    fs::create_dir_all(home_path).unwrap();
-    let mut f = File::create(&file_path).unwrap();
-    f.write_all(user_id.as_bytes()).unwrap();
-}
-
-fn store_identity_id(home_path: &PathBuf, id: &str) {
-    let mut file_path = home_path.clone();
-    file_path.push(".identity");
-    fs::create_dir_all(home_path).unwrap();
-    let mut f = File::create(&file_path).unwrap();
-    f.write_all(id.as_bytes()).unwrap();
+    f.write_all(value.as_bytes()).unwrap();
 }
 
 fn run() -> Result<(), Error> {
@@ -172,7 +156,7 @@ fn run() -> Result<(), Error> {
                     .sync()
                     .and_then(|resp| {
                         let user_id = resp.user_sub;
-                        store_user_id(&home_path, &user_id);
+                        home_cache(&home_path, ".user", &user_id);
                         Ok(())
                     })
                     .or_else(|e| {
@@ -205,7 +189,7 @@ fn run() -> Result<(), Error> {
                 let id_token = account::refresh_auth(&id_provider_client, &refresh_token)
                     .sync()
                     .or_else(|err| {
-                        // TODO only login if the failure is due to auth error
+                        // TODO only login if the failure is due to an auth error
                         println!("Getting refresh token failed {}", err);
                         let creds = prompt::login();
                         account::login(&id_provider_client, creds.username, creds.password)
@@ -218,7 +202,7 @@ fn run() -> Result<(), Error> {
                                 let token = resp.clone()
                                     .authentication_result.expect("Failed")
                                     .refresh_token.expect("Missing refresh token");
-                                store_token(&home_path, &token);
+                                home_cache(&home_path, ".refresh_token", &token);
                                 Ok(resp)})
                     })
                     .context("Failed to get id token")?
