@@ -1,4 +1,7 @@
 set -a; . ../env-prod; set +a
 cargo build --release
 cp target/release/cli ../site/static/install/macos/woz
+cd ../site
+./scripts/deploy
+cd ../cli
 set -a; . ../env-dev; set +a
