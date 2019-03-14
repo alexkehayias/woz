@@ -15,7 +15,6 @@ fn username_password() -> (String, String) {
     stdout.write_all(b"Password: ").unwrap();
     stdout.flush().expect("Error");
     let password = stdin.read_passwd(&mut stdout)
-        .ok()
         .expect("No password")
         .unwrap();
     // For some reason read_passwd doesn't add a newline

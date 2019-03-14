@@ -29,7 +29,7 @@ pub struct WasmPackage {
 
 impl WasmPackage {
     fn new(lib: Lib, wasm_path: PathBuf, js_path: PathBuf) -> Self {
-        WasmPackage {lib: lib, wasm: wasm_path, js: js_path}
+        WasmPackage {lib, wasm: wasm_path, js: js_path}
     }
 }
 
