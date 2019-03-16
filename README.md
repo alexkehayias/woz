@@ -35,6 +35,6 @@ Coming soon—manage charging for your apps and even provide multiple copies you
 * [`seed` framework example](https://woz.sh/us-west-2:f72ab923-2251-4e0d-925e-f3a4408ec70e/seed/index.html)
 * [`percy` framework example](https://woz.sh/us-west-2:f72ab923-2251-4e0d-925e-f3a4408ec70e/percy/index.html)
 
-## Open Source
+## License
 
-Woz is open source and available on [GitHub](https://github.com/alexkehayias/woz). Please share your suggestions and bug reports [here](https://github.com/alexkehayias/woz/issues).
+Eclipse Public License 1.0 (EPL-1.0)

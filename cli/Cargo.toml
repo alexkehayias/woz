@@ -3,6 +3,7 @@ name = "cli"
 version = "0.1.0"
 authors = ["Alex Kehayias <alex.kehayias@gmail.com>"]
 edition = "2018"
+license = "EPL-1.0"
 
 [dependencies]
 clap = {version = "2.32", features = ["yaml"]}
