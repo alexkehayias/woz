@@ -318,7 +318,6 @@ fn run() -> Result<(), Error> {
     Ok(())
 }
 
-// TODO replace Box<Error> with an enum of all the possible errors
 fn main() {
     run().map_err(|e| println!("{}", e)).ok();
 }
