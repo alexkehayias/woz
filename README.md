@@ -33,7 +33,6 @@ Coming soon—manage charging for your apps and even provide multiple copies you
 ## Examples
 
 * [`seed` framework example](https://woz.sh/us-west-2:f72ab923-2251-4e0d-925e-f3a4408ec70e/seed/index.html)
-* [`percy` framework example](https://woz.sh/us-west-2:f72ab923-2251-4e0d-925e-f3a4408ec70e/percy/index.html)
 
 ## License
 
