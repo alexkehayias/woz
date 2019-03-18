@@ -1,7 +1,7 @@
 //! The cli used to interact with the woz service.
 
 use std::io;
-use std::io::{Read, Write};
+use std::io::{Read};
 use std::path::PathBuf;
 use std::fs::File;
 use std::fs;
@@ -37,6 +37,7 @@ mod cache;
 use config::*;
 use template::load_templates;
 use package::wasm_package;
+use cache::FileCache;
 
 
 enum Command {
@@ -63,11 +64,8 @@ impl From<&str> for Command {
 
 /// Attempt to get a refresh_token token, prompting the user to log in if
 /// refresh token is expired and stores it locally.
-fn ensure_refresh_token(home_path: &PathBuf, client: &CognitoIdentityProviderClient) -> String {
-    let mut path = home_path.clone();
-    path.push(".refresh_token");
-
-    fs::read_to_string(path)
+fn ensure_refresh_token(cache: &FileCache, client: &CognitoIdentityProviderClient) -> String {
+    cache.get_encrypted("refresh_token")
         .or_else::<io::Error, _>(|_| {
             let creds = prompt::login();
             let token = account::login(&client, creds.username, creds.password).sync()
@@ -75,10 +73,11 @@ fn ensure_refresh_token(home_path: &PathBuf, client: &CognitoIdentityProviderCli
                     let token = resp
                         .authentication_result.expect("Failed")
                         .refresh_token.expect("Missing refresh token");
-                    home_cache(&home_path, ".refresh_token", &token);
+                    cache.set_encrypted("refresh_token", token.as_bytes().to_vec())
+                        .expect("Failed to cache refresh token");
                     Ok(token)})
                 .or_else::<io::Error, _>(|_| {
-                    Ok(ensure_refresh_token(home_path, client))
+                    Ok(ensure_refresh_token(cache, client))
                 })
                 .expect("Something went wrong");
             Ok(token)
@@ -86,29 +85,19 @@ fn ensure_refresh_token(home_path: &PathBuf, client: &CognitoIdentityProviderCli
         .unwrap()
 }
 
-fn ensure_identity_id(home_path: &PathBuf, client: &CognitoIdentityClient, id_token: &str)
+fn ensure_identity_id(cache: &FileCache, client: &CognitoIdentityClient, id_token: &str)
                       -> String {
-    let mut path = home_path.clone();
-    path.push(".identity");
-
-    fs::read_to_string(path)
+    cache.get("identity")
         .or_else::<io::Error, _>(|_| {
             let id = account::identity_id(client, id_token)
                 .sync()
                 .expect("Failed to get identity ID")
                 .identity_id.expect("No identity ID");
-            home_cache(&home_path, ".identity", &id);
+            cache.set("identity", id.as_bytes().to_vec())
+                .expect("Failed to add identity to cache");
             Ok(id)
         })
         .unwrap()
-}
-
-fn home_cache(home_path: &PathBuf, file_name: &str, value: &str) {
-    let mut file_path = home_path.clone();
-    file_path.push(file_name);
-    fs::create_dir_all(home_path).unwrap();
-    let mut f = File::create(&file_path).unwrap();
-    f.write_all(value.as_bytes()).unwrap();
 }
 
 fn run() -> Result<(), Error> {
@@ -130,6 +119,8 @@ fn run() -> Result<(), Error> {
         .map_or(default_home_path(),
                 |arg| Ok(PathBuf::from(&arg.vals[0])))
         .context("Failed to get woz home path")?;
+    let encryption_key = FileCache::make_key(ENCRYPTION_PASSWORD, ENCRYPTION_SALT);
+    let cache = FileCache::new(encryption_key, home_path.clone());
     println!("Using home path {}", home_path.to_str().unwrap());
 
     // Load the config if present or use default config
@@ -150,6 +141,7 @@ fn run() -> Result<(), Error> {
             // 2. A unique user ID
             // 3. A configured dotfile
             Command::Setup => {
+                fs::create_dir_all(&home_path).context("Failed to make home directory")?;
                 // TODO first check if there is an existing installation
                 let values = prompt::signup();
                 let client = CognitoIdentityProviderClient::new(Region::UsWest2);
@@ -157,7 +149,8 @@ fn run() -> Result<(), Error> {
                     .sync()
                     .and_then(|resp| {
                         let user_id = resp.user_sub;
-                        home_cache(&home_path, ".user", &user_id);
+                        cache.set("user", user_id.as_bytes().to_vec())
+                            .expect("Failed add user ID to cache");
                         Ok(())
                     })
                     .or_else(|e| {
@@ -186,7 +179,7 @@ fn run() -> Result<(), Error> {
                 let id_provider_client = CognitoIdentityProviderClient::new(Region::UsWest2);
                 let id_client = CognitoIdentityClient::new(Region::UsWest2);
 
-                let refresh_token = ensure_refresh_token(&home_path, &id_provider_client);
+                let refresh_token = ensure_refresh_token(&cache, &id_provider_client);
                 let id_token = account::refresh_auth(&id_provider_client, &refresh_token)
                     .sync()
                     .or_else(|err| {
@@ -203,13 +196,16 @@ fn run() -> Result<(), Error> {
                                 let token = resp.clone()
                                     .authentication_result.expect("Failed")
                                     .refresh_token.expect("Missing refresh token");
-                                home_cache(&home_path, ".refresh_token", &token);
+                                cache.set_encrypted(
+                                    "refresh_token",
+                                    token.as_bytes().to_vec()
+                                ).expect("Failed to cache refresh token");
                                 Ok(resp)})
                     })
                     .context("Failed to get id token")?
                     .authentication_result.expect("No auth result")
                     .id_token.expect("No access token");
-                let identity_id = ensure_identity_id(&home_path, &id_client, &id_token);
+                let identity_id = ensure_identity_id(&cache, &id_client, &id_token);
                 let aws_creds = account::aws_credentials(&id_client, &identity_id, &id_token)
                     .sync()
                     .context("Failed to fetch AWS credentials")?

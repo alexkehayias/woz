@@ -5,6 +5,8 @@ use std::path::PathBuf;
 
 use ring::aead::*;
 use ring::rand::*;
+use ring::digest::SHA256;
+use ring::pbkdf2::*;
 
 use failure::Error;
 use failure::ResultExt;
@@ -19,6 +21,18 @@ pub struct FileCache {
 impl FileCache {
     pub fn new(key: [u8; 32], path: PathBuf) -> Self {
         FileCache { key, path }
+    }
+
+    pub fn make_key(password: &str, salt: &str) -> [u8; 32] {
+        let mut key = [0; 32];
+        derive(
+            &SHA256,
+            std::num::NonZeroU32::new(100).unwrap(),
+            salt.as_bytes(),
+            &password.as_bytes()[..],
+            &mut key
+        );
+        key
     }
 
     fn encrypt(&self, content: Vec<u8>) -> Vec<u8> {
@@ -134,21 +148,15 @@ impl FileCache {
 mod cache_tests {
     use super::*;
     use std::env;
-    use ring::digest::SHA256;
-    use ring::pbkdf2::*;
 
     fn make_key() -> [u8; 32] {
-        let password = b"test password";
-        let salt = [0, 1, 2, 3, 4, 5, 6, 7];
-        let mut key = [0; 32];
-        derive(
-            &SHA256,
-            std::num::NonZeroU32::new(100).unwrap(),
-            &salt,
-            &password[..],
-            &mut key
-        );
-        key
+        FileCache::make_key("test password", "test salt")
+    }
+
+    #[test]
+    fn make_key_works() {
+        let result = FileCache::make_key("test-password", "test-salt");
+        assert_eq!(result.len(), 32);
     }
 
     #[test]
