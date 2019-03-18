@@ -11,14 +11,14 @@ use failure::ResultExt;
 
 
 #[derive(Clone)]
-pub struct HomeCache {
+pub struct FileCache {
     key: [u8; 32],
     path: PathBuf,
 }
 
-impl HomeCache {
+impl FileCache {
     pub fn new(key: [u8; 32], path: PathBuf) -> Self {
-        HomeCache { key, path }
+        FileCache { key, path }
     }
 
     fn encrypt(&self, content: Vec<u8>) -> Vec<u8> {
@@ -155,7 +155,7 @@ mod cache_tests {
     fn encrypt_works() {
         let key = make_key();
         let home_path = env::temp_dir();
-        let cache = HomeCache::new(key, home_path);
+        let cache = FileCache::new(key, home_path);
         let out = cache.encrypt(b"secret message".to_vec());
         assert!(out.len() > 0);
     }
@@ -164,19 +164,19 @@ mod cache_tests {
     fn extract_nonce_works() {
         let key = make_key();
         let home_path = env::temp_dir();
-        let cache = HomeCache::new(key, home_path);
+        let cache = FileCache::new(key, home_path);
         let out = cache.encrypt(b"secret message".to_vec());
-        HomeCache::extract_nonce(out);
+        FileCache::extract_nonce(out);
     }
 
     #[test]
     fn decrypt_works() {
         let key = make_key();
         let home_path = env::temp_dir();
-        let cache = HomeCache::new(key, home_path);
+        let cache = FileCache::new(key, home_path);
         let value = b"secret message".to_vec();
         let encrypted = cache.clone().encrypt(value.clone());
-        let (nonce, content) = HomeCache::extract_nonce(encrypted);
+        let (nonce, content) = FileCache::extract_nonce(encrypted);
         let actual = cache.decrypt(nonce, content);
         assert_eq!(value, actual);
     }
@@ -185,7 +185,7 @@ mod cache_tests {
     fn get_works() {
         let key = make_key();
         let home_path = env::temp_dir();
-        let cache = HomeCache::new(key, home_path);
+        let cache = FileCache::new(key, home_path);
         cache.set("test-get-key", "test value".as_bytes().to_vec()).unwrap();
         let result = cache.get("test-get-key").unwrap();
         assert_eq!("test value", result);
@@ -195,7 +195,7 @@ mod cache_tests {
     fn get_encrypted_works() {
         let key = make_key();
         let home_path = env::temp_dir();
-        let cache = HomeCache::new(key, home_path.clone());
+        let cache = FileCache::new(key, home_path.clone());
         cache.set_encrypted(
             "test-get-encrypted-key",
             "test value".as_bytes().to_vec()
@@ -209,7 +209,7 @@ mod cache_tests {
     fn set_works() {
         let key = make_key();
         let mut home_path = env::temp_dir();
-        let cache = HomeCache::new(key, home_path.clone());
+        let cache = FileCache::new(key, home_path.clone());
         cache.set(
             "test-set-key",
             "test value".as_bytes().to_vec()
@@ -222,7 +222,7 @@ mod cache_tests {
     fn set_encrypted_works() {
         let key = make_key();
         let mut home_path = env::temp_dir();
-        let cache = HomeCache::new(key, home_path.clone());
+        let cache = FileCache::new(key, home_path.clone());
         cache.set_encrypted(
             "test-set-encrypted-key",
             "test value".as_bytes().to_vec()
