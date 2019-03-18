@@ -24,7 +24,8 @@ fn test_index_templates() {
             "name": "Test App",
             "author": "Alex Kehayias",
             "description": "Description here",
-            "loader_js_path": "./loader.js",
+            "manifest_path": "./manifest.json",
+            "app_js_path": "./app.js",
             "sw_js_path": "./sw.js",
             "wasm_path": "./app.wasm",
         }));
