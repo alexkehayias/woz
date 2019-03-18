@@ -32,6 +32,7 @@ mod account;
 mod config;
 mod template;
 mod package;
+mod cache;
 
 use config::*;
 use template::load_templates;
@@ -190,12 +191,12 @@ fn run() -> Result<(), Error> {
                     .sync()
                     .or_else(|err| {
                         // TODO only login if the failure is due to an auth error
-                        println!("Getting refresh token failed {}", err);
+                        println!("Getting refresh token failed: {}", err);
                         let creds = prompt::login();
                         account::login(&id_provider_client, creds.username, creds.password)
                             .sync()
                             .or_else(|e| {
-                                println!("Login failed {}", e);
+                                println!("Login failed: {}", e);
                                 Err(e)
                             })
                             .and_then(|resp| {

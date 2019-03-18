@@ -9,7 +9,6 @@ use crate::config::*;
 
 
 pub fn signup(client: CognitoIdentityProviderClient, email: String, username: String, password: String) -> RusotoFuture<SignUpResponse, SignUpError> {
-    // Build the request
     let mut request = SignUpRequest::default();
     request.username = username;
     request.password = password;
@@ -19,8 +18,6 @@ pub fn signup(client: CognitoIdentityProviderClient, email: String, username: St
         value: Some(email)
     };
     request.user_attributes = Some(vec![email]);
-
-    // Make the request
     client.sign_up(request)
 }
 
@@ -59,14 +56,15 @@ pub fn identity_id(client: &CognitoIdentityClient, id_token: &str)
     client.get_id(req)
 }
 
+type AWSCredentialsResponse = RusotoFuture<GetCredentialsForIdentityResponse,
+                                           GetCredentialsForIdentityError>;
 pub fn aws_credentials(client: &CognitoIdentityClient, identity_id: &str, id_token: &str)
-                       -> RusotoFuture<GetCredentialsForIdentityResponse,
-                                      GetCredentialsForIdentityError> {
-                           let mut logins = HashMap::new();
-                           logins.insert(IDENTITY_POOL_URL.to_string(), id_token.to_owned());
+                       ->  AWSCredentialsResponse {
+    let mut logins = HashMap::new();
+    logins.insert(IDENTITY_POOL_URL.to_string(), id_token.to_owned());
 
-                           let mut req = GetCredentialsForIdentityInput::default();
-                           req.identity_id = identity_id.to_owned();
-                           req.logins = Some(logins);
-                           client.get_credentials_for_identity(req)
-                       }
+    let mut req = GetCredentialsForIdentityInput::default();
+    req.identity_id = identity_id.to_owned();
+    req.logins = Some(logins);
+    client.get_credentials_for_identity(req)
+}
