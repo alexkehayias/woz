@@ -74,6 +74,8 @@ pub struct Config {
     pub lib: Option<Lib>,
     pub name: String,
     pub short_name: Option<String>,
+    pub author: Option<String>,
+    pub description: Option<String>,
     pub env: Option<Environment>,
     pub wasm_path: PathBuf
 }
@@ -85,6 +87,8 @@ impl Default for Config {
             lib: Some(Lib::WasmBindgen),
             name: String::from("My App"),
             short_name: Some(String::from("App")),
+            author: None,
+            description: Some(String::from("App built with woz.sh")),
             env: Some(Environment::Release),
             wasm_path: PathBuf::new(),
         }

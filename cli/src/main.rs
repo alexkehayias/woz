@@ -129,8 +129,7 @@ fn run() -> Result<(), Error> {
     let conf_str = fs::read_to_string(conf_path.clone())
         .context(format!("Couldn't find woz config file at {}",
                          conf_path.clone().to_str().unwrap()))?;
-    let conf: Config = toml::from_str(&conf_str)
-        .context("Failed to parse woz config")?;
+    let conf: Config = toml::from_str(&conf_str).context("Failed to parse woz config")?;
 
     let ProjectId(project_id) = conf.project_id;
 
@@ -233,9 +232,9 @@ fn run() -> Result<(), Error> {
                 wasm_path.push(conf.wasm_path);
 
                 let index_template = handlebars.render("index", &json!({
-                    "name": "Test App",
-                    "author": "Alex Kehayias",
-                    "description": "Description here",
+                    "name": conf.name,
+                    "author": conf.author,
+                    "description": conf.description,
                     "manifest_path": "./manifest.json",
                     "app_js_path": "./app.js",
                     "sw_js_path": "./sw.js",
@@ -243,9 +242,17 @@ fn run() -> Result<(), Error> {
                 }));
                 let manifest_template = handlebars.render("manifest", &json!({
                     "name": conf.name,
-                    "short_name": "",
+                    "short_name": conf.short_name,
                     "bg_color": "#ffffff",
-                    "description": "Description here",
+                    "description": conf.description,
+                    "icons": {
+                        "path_48": "./img/icons/homescreen_48x48.png",
+                        "path_72": "./img/icons/homescreen_72x72.png",
+                        "path_96": "./img/icons/homescreen_96x96.png",
+                        "path_144": "./img/icons/homescreen_144x144.png",
+                        "path_168": "./img/icons/homescreen_168x168.png",
+                        "path_192": "./img/icons/homescreen_192x192.png"
+                    }
                 }));
                 let service_worker_template = handlebars.render("sw.js", &json!({}));
 
