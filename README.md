@@ -20,8 +20,8 @@ Setup and deploy your project:
 woz setup
 # Follow prompts to create your Woz account
 woz new myapp
+cd myapp
 woz deploy
->> Your app is now available at https://woz.sh/myusername/myapp
 ```
 
 ## Early Access—Free
