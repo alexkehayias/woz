@@ -170,12 +170,12 @@ fn run() -> Result<(), Error> {
                     .context("Failed to create new project using cargo")?;
 
                 // Add Cargo.toml deps and options
-                let mut f = fs::OpenOptions::new()
+                let mut cargo_conf = fs::OpenOptions::new()
                     .append(true)
                     .open(PathBuf::from(format!("{}/Cargo.toml", project_name)))
                     .context("Failed to open Cargo.toml")?;
 
-                f.write_all("seed = \"0.2.9\"
+                cargo_conf.write_all("seed = \"0.2.9\"
 wasm-bindgen = \"0.2.37\"
 web-sys = \"0.3.14\"
 
@@ -185,8 +185,9 @@ crate-type = [\"cdylib\"]".as_bytes()).unwrap();
                 // Add a woz config
                 // TODO maybe safer to generate the
                 // whole file and not just part of it
-                let mut woz_conf = File::create(PathBuf::from(format!("{}/woz.toml", project_name)))
-                    .context("Failed to create woz config")?;
+                let mut woz_conf = File::create(
+                    PathBuf::from(format!("{}/woz.toml", project_name))
+                ).context("Failed to create woz config")?;
                 woz_conf.write_all(format!("name=\"Example: My App\"
 project_id=\"{}\"
 short_name=\"MyApp\"
@@ -198,18 +199,28 @@ wasm_path=\"target/wasm32-unknown-unknown/release/{}.wasm\"
                 // Would be nice if we
                 // could make a static out of a file i.e from the
                 // example app
-
-
-
             },
             // Init should result in
             // 1. A config file in the current directory
             Command::Init => {
-                println!("Init...");
-                // TODO Create a local config file
-                // TODO Create a project landing page in S3
-                // TODO Create the .woz home directory
-                // Print the url
+                println!("Initializing current project directory...");
+                let cargo_conf = fs::read_to_string("./Config.toml")
+                    .context("You must be in a cargo project")?
+                    .parse::<toml::Value>()
+                    .context("Failed to read Cargo.toml")?;
+                let project_name = &cargo_conf["package"]["name"];
+
+                let mut woz_conf = File::create(
+                    PathBuf::from(format!("{}/woz.toml", project_name))
+                ).context("Failed to create woz config")?;
+                woz_conf.write_all(format!("name=\"{}\"
+project_id=\"{}\"
+short_name=\"{}\"
+lib=\"wasm-bindgen\"
+wasm_path=\"target/wasm32-unknown-unknown/release/{}.wasm\"
+", project_name, project_name, project_name, project_name).as_bytes()).unwrap();
+
+                println!("Ready to be deployed with 'woz deploy'");
             },
             Command::Deploy => {
                 println!("Deploying...");
