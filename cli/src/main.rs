@@ -1,7 +1,7 @@
 //! The cli used to interact with the woz service.
 
 use std::io;
-use std::io::{Read};
+use std::io::{Read, Write};
 use std::path::PathBuf;
 use std::fs::File;
 use std::fs;
@@ -9,6 +9,7 @@ use std::str;
 use std::default::Default;
 use std::env;
 use std::error::Error as StdError;
+use std::process;
 use toml;
 
 #[macro_use] extern crate clap;
@@ -123,16 +124,6 @@ fn run() -> Result<(), Error> {
     let cache = FileCache::new(encryption_key, home_path.clone());
     println!("Using home path {}", home_path.to_str().unwrap());
 
-    // Load the config if present or use default config
-    let mut conf_path = project_path.clone();
-    conf_path.push("woz.toml");
-    let conf_str = fs::read_to_string(conf_path.clone())
-        .context(format!("Couldn't find woz config file at {}",
-                         conf_path.clone().to_str().unwrap()))?;
-    let conf: Config = toml::from_str(&conf_str).context("Failed to parse woz config")?;
-
-    let ProjectId(project_id) = conf.project_id;
-
     if let Some(sub) = input.subcommand_name() {
         match Command::from(sub) {
             // Setup should result in
@@ -163,6 +154,53 @@ fn run() -> Result<(), Error> {
                 // TODO Create a project landing page in S3
                 // TODO Create the .woz home directory
                 // Print the url
+
+                // This unwrap is safe because the cli preparses and
+                // will show an error if we are missing an argument to
+                // the `new` command
+                let subcommand_args = input.subcommand_matches("new").unwrap();
+                let project_name = subcommand_args.value_of("NAME").unwrap();
+                let command = format!("cargo new {} --lib", project_name);
+
+                // Create the skeleton project
+                process::Command::new("sh")
+                    .arg("-c")
+                    .arg(command)
+                    .output()
+                    .context("Failed to create new project using cargo")?;
+
+                // Add Cargo.toml deps and options
+                let mut f = fs::OpenOptions::new()
+                    .append(true)
+                    .open(PathBuf::from(format!("{}/Cargo.toml", project_name)))
+                    .context("Failed to open Cargo.toml")?;
+
+                f.write_all("seed = \"0.2.9\"
+wasm-bindgen = \"0.2.37\"
+web-sys = \"0.3.14\"
+
+[lib]
+crate-type = [\"cdylib\"]".as_bytes()).unwrap();
+
+                // Add a woz config
+                // TODO maybe safer to generate the
+                // whole file and not just part of it
+                let mut woz_conf = File::create(PathBuf::from(format!("{}/woz.toml", project_name)))
+                    .context("Failed to create woz config")?;
+                woz_conf.write_all(format!("name=\"Example: My App\"
+project_id=\"{}\"
+short_name=\"MyApp\"
+lib=\"wasm-bindgen\"
+wasm_path=\"target/wasm32-unknown-unknown/release/{}.wasm\"
+", project_name, project_name).as_bytes()).unwrap();
+
+                // TODO Write a hello world lib.rs
+                // Would be nice if we
+                // could make a static out of a file i.e from the
+                // example app
+
+
+
             },
             // Init should result in
             // 1. A config file in the current directory
@@ -175,6 +213,16 @@ fn run() -> Result<(), Error> {
             },
             Command::Deploy => {
                 println!("Deploying...");
+                // Load the config if present or use default config
+                let mut conf_path = project_path.clone();
+                conf_path.push("woz.toml");
+                let conf_str = fs::read_to_string(conf_path.clone())
+                    .context(format!("Couldn't find woz config file at {}",
+                                     conf_path.clone().to_str().unwrap()))?;
+                let conf: Config = toml::from_str(&conf_str).context("Failed to parse woz config")?;
+
+                let ProjectId(project_id) = conf.project_id;
+
                 let id_provider_client = CognitoIdentityProviderClient::new(Region::UsWest2);
                 let id_client = CognitoIdentityClient::new(Region::UsWest2);
 
