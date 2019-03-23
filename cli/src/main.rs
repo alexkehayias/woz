@@ -224,6 +224,13 @@ wasm_path=\"target/wasm32-unknown-unknown/release/{}.wasm\"
             },
             Command::Deploy => {
                 println!("Deploying...");
+                // First compile the project in release mode
+                process::Command::new("sh")
+                    .arg("-c")
+                    .arg("cargo build --release --target wasm32-unknown-unknown")
+                    .output()
+                    .context("Failed to compile project")?;
+
                 // Load the config if present or use default config
                 let mut conf_path = project_path.clone();
                 conf_path.push("woz.toml");
