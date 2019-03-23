@@ -41,6 +41,8 @@ use package::wasm_package;
 use cache::FileCache;
 
 
+static DEFAULT_PROJECT_LIB_RS: &str = include_str!("../../examples/seed-app/src/lib.rs");
+
 enum Command {
     Init,
     NewProject,
@@ -150,11 +152,6 @@ fn run() -> Result<(), Error> {
                 println!("Please check your inbox for an email to verify your account.");
             },
             Command::NewProject => {
-                // TODO Create a local config file
-                // TODO Create a project landing page in S3
-                // TODO Create the .woz home directory
-                // Print the url
-
                 // This unwrap is safe because the cli preparses and
                 // will show an error if we are missing an argument to
                 // the `new` command
@@ -195,11 +192,11 @@ lib=\"wasm-bindgen\"
 wasm_path=\"target/wasm32-unknown-unknown/release/{}.wasm\"
 ", project_name, project_name).as_bytes()).unwrap();
 
-                // TODO Write a hello world lib.rs
-                // Would be nice if we
-                // could make a static out of a file i.e from the
-                // example app
-            },
+                // Write a hello world lib.rs
+                let mut default_lib_rs = File::create(
+                    PathBuf::from(format!("{}/src/lib.rs", project_name))
+                ).context("Failed to create lib.rs")?;
+                default_lib_rs.write_all(DEFAULT_PROJECT_LIB_RS.as_bytes()).unwrap();                },
             // Init should result in
             // 1. A config file in the current directory
             Command::Init => {
