@@ -1,7 +1,13 @@
+# Set environment variables to production values
 set -a; . ../env-prod; set +a
 cargo build --release
+# Copy to site
 cp target/release/cli ../site/static/install/macos/woz
+# Copy locally
+cp ./target/release/cli /usr/local/bin/woz
+# Deploy the site so the new version is available
 cd ../site
 ./scripts/deploy
 cd ../cli
+# Go back to local development environment variables
 set -a; . ../env-dev; set +a
