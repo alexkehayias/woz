@@ -3,6 +3,7 @@ use std::path::PathBuf;
 
 use failure::Error;
 use failure::ResultExt;
+use failure::err_msg;
 
 use image;
 use image::DynamicImage;
@@ -70,11 +71,16 @@ pub fn wasm_package(lib: Lib, wasm_path: PathBuf, out_path: PathBuf)
                 out_path.clone().into_os_string().into_string().unwrap()
             );
 
-            process::Command::new("sh")
+            let mut bindgen_proc = process::Command::new("sh")
                 .arg("-c")
                 .arg(command)
-                .output()
-                .context("Failed to generate wasm bindings")?;
+                .stdout(process::Stdio::piped())
+                .spawn()
+                .context("Failed to spawn wasm-bindgen")?;
+            let exit_code = bindgen_proc.wait().context("Failed to wait for bindings")?;
+            if !exit_code.success() {
+                return Err(format_err!("wasm-bindgen failed"))
+            };
 
             let mut js_path = out_path.clone();
             js_path.push("app.js");

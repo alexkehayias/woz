@@ -177,7 +177,7 @@ dependencies = [
 
 [[package]]
 name = "cli"
-version = "0.1.1"
+version = "0.2.0"
 dependencies = [
  "clap 2.32.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "failure 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",

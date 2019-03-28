@@ -17,6 +17,7 @@ use clap::App;
 
 #[macro_use] extern crate serde_derive;
 #[macro_use] extern crate serde_json;
+#[macro_use] extern crate failure;
 
 use failure::Error;
 use failure::ResultExt;
@@ -173,7 +174,7 @@ fn run() -> Result<(), Error> {
                     .context("Failed to open Cargo.toml")?;
 
                 cargo_conf.write_all("seed = \"0.2.9\"
-wasm-bindgen = \"0.2.37\"
+wasm-bindgen = \"0.2.40\"
 web-sys = \"0.3.14\"
 
 [lib]
@@ -196,7 +197,9 @@ wasm_path=\"target/wasm32-unknown-unknown/release/{}.wasm\"
                 let mut default_lib_rs = File::create(
                     PathBuf::from(format!("{}/src/lib.rs", project_name))
                 ).context("Failed to create lib.rs")?;
-                default_lib_rs.write_all(DEFAULT_PROJECT_LIB_RS.as_bytes()).unwrap();                },
+                default_lib_rs.write_all(DEFAULT_PROJECT_LIB_RS.as_bytes()).unwrap();
+                println!("New project created! Please cd to ./{}", project_name);
+            },
             // Init should result in
             // 1. A config file in the current directory
             Command::Init => {
@@ -222,11 +225,16 @@ wasm_path=\"target/wasm32-unknown-unknown/release/{}.wasm\"
             Command::Deploy => {
                 println!("Deploying...");
                 // First compile the project in release mode
-                process::Command::new("sh")
+                let mut build_proc = process::Command::new("sh")
                     .arg("-c")
                     .arg("cargo build --release --target wasm32-unknown-unknown")
-                    .output()
-                    .context("Failed to compile project")?;
+                    .stdout(process::Stdio::piped())
+                    .spawn()
+                    .context("Failed to spawn build")?;
+                let exit_code = build_proc.wait().context("Failed to wait for build")?;
+                if !exit_code.success() {
+                    return Err(format_err!("Build failed, please check output above."))
+                }
 
                 // Load the config if present or use default config
                 let mut conf_path = project_path.clone();
