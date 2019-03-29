@@ -3,14 +3,13 @@ use std::path::PathBuf;
 
 use failure::Error;
 use failure::ResultExt;
-use failure::err_msg;
 
 use image;
 use image::DynamicImage;
 use image::GenericImageView;
 use image::imageops::FilterType;
 
-use crate::config::{Config, Lib};
+use crate::config::Lib;
 
 
 /// Generates a set of icon images from the source file

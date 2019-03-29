@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::path::PathBuf;
 use serde::{Deserialize, Deserializer};
 use failure::Error;
@@ -11,6 +12,36 @@ pub const CLIENT_ID: &str = env!("WOZ_CLIENT_ID");
 pub const S3_BUCKET_NAME: &str = env!("WOZ_S3_BUCKET_NAME");
 pub const ENCRYPTION_PASSWORD: &str = env!("WOZ_ENCRYPTION_PASSWORD");
 pub const ENCRYPTION_SALT: &str = env!("WOZ_ENCRYPTION_SALT");
+
+pub static DEFAULT_PROJECT_LIB_RS: &str = include_str!("../../examples/seed-app/src/lib.rs");
+
+// Default icons are included in the bin. This will make it bigger so
+// maybe in the future these should be downloaded to the user's local
+// filesystem on install.
+//
+// Making these all static even though they will only be accessed via
+// DEFAULT_ICONS so that it's a compile error if the default icon
+// files don't exist.
+static DEFAULT_ICON_48X48: &'static [u8; 6623] = include_bytes!("../resources/icons/48x48.png");
+static DEFAULT_ICON_72X72: &'static [u8; 6623] = include_bytes!("../resources/icons/72x72.png");
+static DEFAULT_ICON_96X96: &'static [u8; 6623] = include_bytes!("../resources/icons/96x96.png");
+static DEFAULT_ICON_144X144: &'static [u8; 6623] = include_bytes!("../resources/icons/144x144.png");
+static DEFAULT_ICON_168X168: &'static [u8; 6623] = include_bytes!("../resources/icons/168x168.png");
+static DEFAULT_ICON_192X192: &'static [u8; 6623] = include_bytes!("../resources/icons/192x192.png");
+
+lazy_static!{
+    pub static ref DEFAULT_ICONS: HashMap<&'static str, Vec<u8>> = {
+        let mut m = HashMap::new();
+        m.insert("48x48", DEFAULT_ICON_48X48.to_vec());
+        m.insert("72x72", DEFAULT_ICON_72X72.to_vec());
+        m.insert("96x96", DEFAULT_ICON_96X96.to_vec());
+        m.insert("144x144", DEFAULT_ICON_144X144.to_vec());
+        m.insert("168x168", DEFAULT_ICON_168X168.to_vec());
+        m.insert("192x192", DEFAULT_ICON_192X192.to_vec());
+        m
+    };
+}
+
 
 #[derive(Debug, Serialize)]
 pub enum Lib {
@@ -69,6 +100,29 @@ impl<'de> Deserialize<'de> for ProjectId {
 }
 
 #[derive(Debug, Deserialize)]
+pub struct Icons {
+    pub path_48x48: PathBuf,
+    pub path_72x72: PathBuf,
+    pub path_96x96: PathBuf,
+    pub path_144x144: PathBuf,
+    pub path_168x168: PathBuf,
+    pub path_192x192: PathBuf,
+}
+
+impl Icons {
+    pub fn to_vec(&self) -> Vec<(&'static str, &PathBuf)>{
+        vec![
+            ("48x48", &self.path_48x48),
+            ("72x72", &self.path_72x72),
+            ("96x96", &self.path_96x96),
+            ("144x144", &self.path_144x144),
+            ("168x168", &self.path_168x168),
+            ("192x192", &self.path_192x192),
+        ]
+    }
+}
+
+#[derive(Debug, Deserialize)]
 pub struct Config {
     pub project_id: ProjectId,
     pub lib: Option<Lib>,
@@ -77,7 +131,8 @@ pub struct Config {
     pub author: Option<String>,
     pub description: Option<String>,
     pub env: Option<Environment>,
-    pub wasm_path: PathBuf
+    pub wasm_path: PathBuf,
+    pub icons: Option<Icons>,
 }
 
 impl Default for Config {
@@ -91,6 +146,7 @@ impl Default for Config {
             description: Some(String::from("App built with woz.sh")),
             env: Some(Environment::Release),
             wasm_path: PathBuf::new(),
+            icons: None,
         }
     }
 }

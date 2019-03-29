@@ -15,6 +15,7 @@ use toml;
 #[macro_use] extern crate clap;
 use clap::App;
 
+#[macro_use] extern crate lazy_static;
 #[macro_use] extern crate serde_derive;
 #[macro_use] extern crate serde_json;
 #[macro_use] extern crate failure;
@@ -41,8 +42,6 @@ use template::load_templates;
 use package::wasm_package;
 use cache::FileCache;
 
-
-static DEFAULT_PROJECT_LIB_RS: &str = include_str!("../../examples/seed-app/src/lib.rs");
 
 enum Command {
     Init,
@@ -315,15 +314,7 @@ wasm_path=\"target/wasm32-unknown-unknown/release/{}.wasm\"
                     "name": conf.name,
                     "short_name": conf.short_name,
                     "bg_color": "#ffffff",
-                    "description": conf.description,
-                    "icons": {
-                        "path_48": "./img/icons/homescreen_48x48.png",
-                        "path_72": "./img/icons/homescreen_72x72.png",
-                        "path_96": "./img/icons/homescreen_96x96.png",
-                        "path_144": "./img/icons/homescreen_144x144.png",
-                        "path_168": "./img/icons/homescreen_168x168.png",
-                        "path_192": "./img/icons/homescreen_192x192.png"
-                    }
+                    "description": conf.description
                 }));
                 let service_worker_template = handlebars.render("sw.js", &json!({}));
 
@@ -337,7 +328,7 @@ wasm_path=\"target/wasm32-unknown-unknown/release/{}.wasm\"
                 // cognito identity ID and project_id
                 let key_prefix = format!("{}/{}", &identity_id, &project_id);
 
-                let files = vec![
+                let mut files = vec![
                     (format!("{}/index.html", key_prefix),
                      String::from("text/html"),
                      index_template.context("Failed to render index.html")?.into_bytes()),
@@ -359,6 +350,31 @@ wasm_path=\"target/wasm32-unknown-unknown/release/{}.wasm\"
                          buffer
                      }),
                 ];
+
+                // Add in homescreen icons to upload, use defaults if
+                // not specified in the config
+                if let Some(icons) = conf.icons {
+                    for (size, path) in icons.to_vec() {
+                        let mut f = File::open(path)
+                            .context("Icon file does not exist")?;
+                        let mut buffer = Vec::new();
+                        f.read_to_end(&mut buffer)
+                            .context("Failed to read icon to bytes")?;
+                        files.push(
+                            (format!("{}/img/icons/homescreen_{}.png", key_prefix, size),
+                             String::from("image/png"),
+                             buffer)
+                        )
+                    }
+                } else {
+                    for (size, bytes) in DEFAULT_ICONS.iter() {
+                        files.push(
+                            (format!("{}/img/icons/homescreen_{}.png", key_prefix, size),
+                             String::from("image/png"),
+                             bytes.to_owned())
+                        );
+                    };
+                }
 
                 for (file_name, mimetype, body) in files.into_iter() {
                     let req = PutObjectRequest {
