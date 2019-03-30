@@ -29,6 +29,11 @@ static DEFAULT_ICON_144X144: &'static [u8; 6623] = include_bytes!("../resources/
 static DEFAULT_ICON_168X168: &'static [u8; 6623] = include_bytes!("../resources/icons/168x168.png");
 static DEFAULT_ICON_192X192: &'static [u8; 6623] = include_bytes!("../resources/icons/192x192.png");
 
+// iOS icon sizes
+static DEFAULT_ICON_152X152: &'static [u8; 6623] = include_bytes!("../resources/icons/152x152.png");
+static DEFAULT_ICON_167X167: &'static [u8; 6623] = include_bytes!("../resources/icons/167x167.png");
+static DEFAULT_ICON_180X180: &'static [u8; 6623] = include_bytes!("../resources/icons/180x180.png");
+
 lazy_static!{
     pub static ref DEFAULT_ICONS: HashMap<&'static str, Vec<u8>> = {
         let mut m = HashMap::new();
@@ -36,12 +41,42 @@ lazy_static!{
         m.insert("72x72", DEFAULT_ICON_72X72.to_vec());
         m.insert("96x96", DEFAULT_ICON_96X96.to_vec());
         m.insert("144x144", DEFAULT_ICON_144X144.to_vec());
+        m.insert("152x152", DEFAULT_ICON_152X152.to_vec());
+        m.insert("167x167", DEFAULT_ICON_167X167.to_vec());
         m.insert("168x168", DEFAULT_ICON_168X168.to_vec());
+        m.insert("180x180", DEFAULT_ICON_180X180.to_vec());
         m.insert("192x192", DEFAULT_ICON_192X192.to_vec());
         m
     };
 }
 
+static DEFAULT_SPLASH_IPHONE5: &'static [u8; 37880] = include_bytes!("../resources/splashscreens/iphone5_splash.png");
+static DEFAULT_SPLASH_IPHONE6: &'static [u8; 39604] = include_bytes!("../resources/splashscreens/iphone6_splash.png");
+static DEFAULT_SPLASH_IPHONEPLUS: &'static [u8; 51706] = include_bytes!("../resources/splashscreens/iphoneplus_splash.png");
+static DEFAULT_SPLASH_IPHONEX: &'static [u8; 44797] = include_bytes!("../resources/splashscreens/iphonex_splash.png");
+static DEFAULT_SPLASH_IPHONEXR: &'static [u8; 42280] = include_bytes!("../resources/splashscreens/iphonexr_splash.png");
+static DEFAULT_SPLASH_IPHONEXSMAX: &'static [u8; 54950] = include_bytes!("../resources/splashscreens/iphonexsmax_splash.png");
+static DEFAULT_SPLASH_IPAD: &'static [u8; 54919] = include_bytes!("../resources/splashscreens/ipad_splash.png");
+static DEFAULT_SPLASH_IPADPRO1: &'static [u8; 60819] = include_bytes!("../resources/splashscreens/ipadpro1_splash.png");
+static DEFAULT_SPLASH_IPADPRO3: &'static [u8; 62394] = include_bytes!("../resources/splashscreens/ipadpro3_splash.png");
+static DEFAULT_SPLASH_IPADPRO2: &'static [u8; 71374] = include_bytes!("../resources/splashscreens/ipadpro2_splash.png");
+
+lazy_static!{
+    pub static ref DEFAULT_SPLASHSCREENS: HashMap<&'static str, Vec<u8>> = {
+        let mut m = HashMap::new();
+        m.insert("iphone5", DEFAULT_SPLASH_IPHONE5.to_vec());
+        m.insert("iphone6", DEFAULT_SPLASH_IPHONE6.to_vec());
+        m.insert("iphoneplus", DEFAULT_SPLASH_IPHONEPLUS.to_vec());
+        m.insert("iphonex", DEFAULT_SPLASH_IPHONEX.to_vec());
+        m.insert("iphonexr", DEFAULT_SPLASH_IPHONEXR.to_vec());
+        m.insert("iphonexsmax", DEFAULT_SPLASH_IPHONEXSMAX.to_vec());
+        m.insert("ipad", DEFAULT_SPLASH_IPAD.to_vec());
+        m.insert("ipadpro1", DEFAULT_SPLASH_IPADPRO1.to_vec());
+        m.insert("ipadpro3", DEFAULT_SPLASH_IPADPRO3.to_vec());
+        m.insert("ipadpro2", DEFAULT_SPLASH_IPADPRO2.to_vec());
+        m
+    };
+}
 
 #[derive(Debug, Serialize)]
 pub enum Lib {
@@ -123,6 +158,37 @@ impl Icons {
 }
 
 #[derive(Debug, Deserialize)]
+pub struct SplashScreens {
+    iphone5: PathBuf,
+    iphone6: PathBuf,
+    iphoneplus: PathBuf,
+    iphonex: PathBuf,
+    iphonexr: PathBuf,
+    iphonexsmax: PathBuf,
+    ipad: PathBuf,
+    ipadpro1: PathBuf,
+    ipadpro3: PathBuf,
+    ipadpro2: PathBuf,
+}
+
+impl SplashScreens {
+    pub fn to_vec(&self) -> Vec<(&'static str, &PathBuf)>{
+        vec![
+            ("iphone5", &self.iphone5),
+            ("iphone6", &self.iphone6),
+            ("iphoneplus", &self.iphoneplus),
+            ("iphonex", &self.iphonex),
+            ("iphonexr", &self.iphonexr),
+            ("iphonexsmax", &self.iphonexsmax),
+            ("ipad", &self.ipad),
+            ("ipadpro1", &self.ipadpro1),
+            ("ipadpro3", &self.ipadpro3),
+            ("ipadpro2", &self.ipadpro2),
+        ]
+    }
+}
+
+#[derive(Debug, Deserialize)]
 pub struct Config {
     pub project_id: ProjectId,
     pub lib: Option<Lib>,
@@ -133,6 +199,7 @@ pub struct Config {
     pub env: Option<Environment>,
     pub wasm_path: PathBuf,
     pub icons: Option<Icons>,
+    pub splashscreens: Option<SplashScreens>,
 }
 
 impl Default for Config {
@@ -147,6 +214,7 @@ impl Default for Config {
             env: Some(Environment::Release),
             wasm_path: PathBuf::new(),
             icons: None,
+            splashscreens: None,
         }
     }
 }

@@ -18,11 +18,21 @@
     background is a light color due to the low contrast.
     --}}
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <link rel="apple-touch-icon" type="image/png" sizes="180x180" href="icons/todo.jpeg">
-    <meta property="og:image" content="icons/todo.jpeg">
-    <meta property="og:locale" content="en_US">
-    <link rel="shortcut icon" href="icons/todo.jpeg">
-    <link rel="icon" type="image/png" sizes="196x196" href="icons/todo.jpeg">
+    {{!-- iOS specific splashscreens and icons --}}
+    <link rel="apple-touch-startup-image" href="./img/splashscreens/iphone5.png" media="(device-width: 320px) and (device-height: 568px) and (-webkit-device-pixel-ratio: 2)" />
+    <link rel="apple-touch-startup-image" href="./img/splashscreens/iphone6.png" media="(device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2)" />
+    <link rel="apple-touch-startup-image" href="./img/splashscreens/iphoneplus.png" media="(device-width: 621px) and (device-height: 1104px) and (-webkit-device-pixel-ratio: 3)" />
+    <link rel="apple-touch-startup-image" href="./img/splashscreens/iphonex.png" media="(device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3)" />
+    <link rel="apple-touch-startup-image" href="./img/splashscreens/iphonexr.png" media="(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 2)" />
+    <link rel="apple-touch-startup-image" href="./img/splashscreens/iphonexsmax.png" media="(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 3)" />
+    <link rel="apple-touch-startup-image" href="./img/splashscreens/ipad.png" media="(device-width: 768px) and (device-height: 1024px) and (-webkit-device-pixel-ratio: 2)" />
+    <link rel="apple-touch-startup-image" href="./img/splashscreens/ipadpro1.png" media="(device-width: 834px) and (device-height: 1112px) and (-webkit-device-pixel-ratio: 2)" />
+    <link rel="apple-touch-startup-image" href="./img/splashscreens/ipadpro3.png" media="(device-width: 834px) and (device-height: 1194px) and (-webkit-device-pixel-ratio: 2)" />
+    <link rel="apple-touch-startup-image" href="./img/splashscreens/ipadpro2.png" media="(device-width: 1024px) and (device-height: 1366px) and (-webkit-device-pixel-ratio: 2)" />
+    <link rel="apple-touch-icon" type="image/png" href="./img/icons/homescreen_152x152.png">
+    <link rel="apple-touch-icon" type="image/png" sizes="152x152" href="./img/icons/homescreen_152x152.png">
+    <link rel="apple-touch-icon" type="image/png" sizes="167x167" href="./img/icons/homescreen_167x167.png">
+    <link rel="apple-touch-icon" type="image/png" sizes="180x180" href="./img/icons/homescreen_180x180.png">
     <link rel="stylesheet" href="styles/main.css">
     <link rel="manifest" href="{{ manifest_path }}">
     <meta property="og:locale" content="en_US">
@@ -51,7 +61,8 @@
      }
     </style>
   </head>
-  <body>
+  {{!-- Enable tap effects on buttons and links --}}
+  <body ontouchstart="">
     <header>
       <h1>{{ name }}</h1>
     </header>

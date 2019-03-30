@@ -376,6 +376,31 @@ wasm_path=\"target/wasm32-unknown-unknown/release/{}.wasm\"
                     };
                 }
 
+                // Add in splashscreens for iOS devices, use defaults if
+                // not specified in the config
+                if let Some(splashscreens) = conf.splashscreens {
+                    for (device, path) in splashscreens.to_vec() {
+                        let mut f = File::open(path)
+                            .context("Splashscreen file does not exist")?;
+                        let mut buffer = Vec::new();
+                        f.read_to_end(&mut buffer)
+                            .context("Failed to read splashscreen to bytes")?;
+                        files.push(
+                            (format!("{}/img/splashscreens/{}.png", key_prefix, device),
+                             String::from("image/png"),
+                             buffer)
+                        )
+                    };
+                } else {
+                    for (device, bytes) in DEFAULT_SPLASHSCREENS.iter() {
+                        files.push(
+                            (format!("{}/img/splashscreens/{}.png", key_prefix, device),
+                             String::from("image/png"),
+                             bytes.to_owned())
+                        );
+                    };
+                }
+
                 for (file_name, mimetype, body) in files.into_iter() {
                     let req = PutObjectRequest {
                         bucket: String::from(S3_BUCKET_NAME),
