@@ -13,7 +13,7 @@ pub const S3_BUCKET_NAME: &str = env!("WOZ_S3_BUCKET_NAME");
 pub const ENCRYPTION_PASSWORD: &str = env!("WOZ_ENCRYPTION_PASSWORD");
 pub const ENCRYPTION_SALT: &str = env!("WOZ_ENCRYPTION_SALT");
 
-pub static DEFAULT_PROJECT_LIB_RS: &str = include_str!("../../examples/seed-app/src/lib.rs");
+pub static DEFAULT_PROJECT_LIB_RS: &str = include_str!(concat!(env!("WOZ_PROJECT_ROOT"), "/examples/seed-app/src/lib.rs"));
 
 // Default icons are included in the bin. This will make it bigger so
 // maybe in the future these should be downloaded to the user's local
@@ -22,17 +22,17 @@ pub static DEFAULT_PROJECT_LIB_RS: &str = include_str!("../../examples/seed-app/
 // Making these all static even though they will only be accessed via
 // DEFAULT_ICONS so that it's a compile error if the default icon
 // files don't exist.
-static DEFAULT_ICON_48X48: &'static [u8; 6623] = include_bytes!("../resources/icons/48x48.png");
-static DEFAULT_ICON_72X72: &'static [u8; 6623] = include_bytes!("../resources/icons/72x72.png");
-static DEFAULT_ICON_96X96: &'static [u8; 6623] = include_bytes!("../resources/icons/96x96.png");
-static DEFAULT_ICON_144X144: &'static [u8; 6623] = include_bytes!("../resources/icons/144x144.png");
-static DEFAULT_ICON_168X168: &'static [u8; 6623] = include_bytes!("../resources/icons/168x168.png");
-static DEFAULT_ICON_192X192: &'static [u8; 6623] = include_bytes!("../resources/icons/192x192.png");
+static DEFAULT_ICON_48X48: &'static [u8; 6623] = include_bytes!(concat!(env!("WOZ_CLI_PROJECT_ROOT"), "/resources/icons/48x48.png"));
+static DEFAULT_ICON_72X72: &'static [u8; 6623] = include_bytes!(concat!(env!("WOZ_CLI_PROJECT_ROOT"), "/resources/icons/72x72.png"));
+static DEFAULT_ICON_96X96: &'static [u8; 6623] = include_bytes!(concat!(env!("WOZ_CLI_PROJECT_ROOT"), "/resources/icons/96x96.png"));
+static DEFAULT_ICON_144X144: &'static [u8; 6623] = include_bytes!(concat!(env!("WOZ_CLI_PROJECT_ROOT"), "/resources/icons/144x144.png"));
+static DEFAULT_ICON_168X168: &'static [u8; 6623] = include_bytes!(concat!(env!("WOZ_CLI_PROJECT_ROOT"), "/resources/icons/168x168.png"));
+static DEFAULT_ICON_192X192: &'static [u8; 6623] = include_bytes!(concat!(env!("WOZ_CLI_PROJECT_ROOT"), "/resources/icons/192x192.png"));
 
 // iOS icon sizes
-static DEFAULT_ICON_152X152: &'static [u8; 6623] = include_bytes!("../resources/icons/152x152.png");
-static DEFAULT_ICON_167X167: &'static [u8; 6623] = include_bytes!("../resources/icons/167x167.png");
-static DEFAULT_ICON_180X180: &'static [u8; 6623] = include_bytes!("../resources/icons/180x180.png");
+static DEFAULT_ICON_152X152: &'static [u8; 6623] = include_bytes!(concat!(env!("WOZ_CLI_PROJECT_ROOT"), "/resources/icons/152x152.png"));
+static DEFAULT_ICON_167X167: &'static [u8; 6623] = include_bytes!(concat!(env!("WOZ_CLI_PROJECT_ROOT"), "/resources/icons/167x167.png"));
+static DEFAULT_ICON_180X180: &'static [u8; 6623] = include_bytes!(concat!(env!("WOZ_CLI_PROJECT_ROOT"), "/resources/icons/180x180.png"));
 
 lazy_static!{
     pub static ref DEFAULT_ICONS: HashMap<&'static str, Vec<u8>> = {
