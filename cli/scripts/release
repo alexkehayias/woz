@@ -2,9 +2,9 @@
 set -a; . ../env-prod; set +a
 cargo build --release
 # Copy to site
-cp target/release/cli ../site/static/install/macos/woz
+cp target/release/woz ../site/static/install/macos/woz
 # Copy locally
-cp ./target/release/cli /usr/local/bin/woz
+cp ./target/release/woz /usr/local/bin/woz
 # Deploy the site so the new version is available
 cd ../site
 ./scripts/deploy
