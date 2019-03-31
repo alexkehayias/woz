@@ -1,9 +1,16 @@
 [package]
-name = "cli"
+name = "woz"
 version = "0.2.0"
 authors = ["Alex Kehayias <alex.kehayias@gmail.com>"]
 edition = "2018"
 license = "EPL-1.0"
+description = """
+Woz is a WebAssembly progressive web app (PWA) toolchain for deploying performant mobile apps distributed for free with a hyperlink.
+"""
+homepage = "https://woz.sh"
+repository = "https://github.com/alexkehayias/woz"
+keywords = ["wasm", "webassembly", "woz", "pwa"]
+categories = ["wasm", "development-tools"]
 
 [dependencies]
 clap = {version = "2.32", features = ["yaml"]}
@@ -23,3 +30,4 @@ termion = "1.5.1"
 failure = "0.1.5"
 ring = "0.14.6"
 image = "*"
+stderrlog = "0.4"
