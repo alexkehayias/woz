@@ -52,16 +52,3 @@ pub fn wasm_package(lib: Lib, wasm_path: PathBuf, out_path: PathBuf)
         _ => unimplemented!()
     }
 }
-
-// TODO add all the business logic here?
-struct AppBuilder;
-
-impl AppBuilder {
-
-    fn size(&self) -> usize {
-        unimplemented!("TODO");
-    }
-}
-
-// TODO does all the business logic for producing all of the file
-// bundle that can be uploaded which is currently stuffed inside main

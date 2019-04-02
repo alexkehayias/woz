@@ -118,7 +118,7 @@ impl<'de> Deserialize<'de> for Environment {
     }
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Clone)]
 pub struct ProjectId(pub String);
 
 impl<'de> Deserialize<'de> for ProjectId {

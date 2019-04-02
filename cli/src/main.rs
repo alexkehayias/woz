@@ -1,12 +1,9 @@
 //! The cli used to interact with the woz service.
-
-use std::io;
-use std::io::{Read, Write};
+use std::io::Write;
 use std::path::PathBuf;
 use std::fs::File;
 use std::fs;
 use std::str;
-use std::default::Default;
 use std::env;
 use std::error::Error as StdError;
 use std::process;
@@ -23,12 +20,8 @@ use clap::App;
 use failure::Error;
 use failure::ResultExt;
 
-use rusoto_core::{Region, ByteStream};
-use rusoto_core::request::HttpClient;
-use rusoto_credential::StaticProvider;
-use rusoto_cognito_identity::*;
+use rusoto_core::Region;
 use rusoto_cognito_idp::*;
-use rusoto_s3::*;
 
 mod prompt;
 mod account;
@@ -36,11 +29,18 @@ mod config;
 mod template;
 mod package;
 mod cache;
+mod builder;
+mod components;
+mod upload_client;
 
 use config::*;
 use template::load_templates;
-use package::wasm_package;
 use cache::FileCache;
+use builder::AppBuilder;
+use components::wasm::WasmComponent;
+use components::pwa::PwaComponent;
+use components::icon::IconComponent;
+use components::splashscreen::SplashscreenComponent;
 
 
 enum Command {
@@ -65,43 +65,6 @@ impl From<&str> for Command {
     }
 }
 
-/// Attempt to get a refresh_token token, prompting the user to log in if
-/// refresh token is expired and stores it locally.
-fn ensure_refresh_token(cache: &FileCache, client: &CognitoIdentityProviderClient) -> String {
-    cache.get_encrypted("refresh_token")
-        .or_else::<io::Error, _>(|_| {
-            let creds = prompt::login();
-            let token = account::login(&client, creds.username, creds.password).sync()
-                .and_then(|resp| {
-                    let token = resp
-                        .authentication_result.expect("Failed")
-                        .refresh_token.expect("Missing refresh token");
-                    cache.set_encrypted("refresh_token", token.as_bytes().to_vec())
-                        .expect("Failed to cache refresh token");
-                    Ok(token)})
-                .or_else::<io::Error, _>(|_| {
-                    Ok(ensure_refresh_token(cache, client))
-                })
-                .expect("Something went wrong");
-            Ok(token)
-        })
-        .unwrap()
-}
-
-fn ensure_identity_id(cache: &FileCache, client: &CognitoIdentityClient, id_token: &str)
-                      -> String {
-    cache.get("identity")
-        .or_else::<io::Error, _>(|_| {
-            let id = account::identity_id(client, id_token)
-                .sync()
-                .expect("Failed to get identity ID")
-                .identity_id.expect("No identity ID");
-            cache.set("identity", id.as_bytes().to_vec())
-                .expect("Failed to add identity to cache");
-            Ok(id)
-        })
-        .unwrap()
-}
 
 fn run() -> Result<(), Error> {
     let handlebars = load_templates().context("Failed to load templates")?;
@@ -235,185 +198,57 @@ wasm_path=\"target/wasm32-unknown-unknown/release/{}.wasm\"
                     return Err(format_err!("Build failed, please check output above."))
                 }
 
-                // Load the config if present or use default config
+                // Load the woz config if present or use default config
                 let mut conf_path = project_path.clone();
                 conf_path.push("woz.toml");
                 let conf_str = fs::read_to_string(conf_path.clone())
                     .context(format!("Couldn't find woz config file at {}",
                                      conf_path.clone().to_str().unwrap()))?;
-                let conf: Config = toml::from_str(&conf_str).context("Failed to parse woz config")?;
+                let conf: Config = toml::from_str(&conf_str)
+                    .context("Failed to parse woz config")?;
 
-                let ProjectId(project_id) = conf.project_id;
+                let s3_client = upload_client::authenticated_client(&cache)
+                    .context("Unable to initialize upload client")?;
 
-                let id_provider_client = CognitoIdentityProviderClient::new(Region::UsWest2);
-                let id_client = CognitoIdentityClient::new(Region::UsWest2);
+                // Here we are relying on this implicit, synchronous
+                // behavior and reading the identity ID from the file
+                // cache because at this point it should be there.
+                //
+                // TODO: Probably want to guarantee that the identity
+                // ID exists in the file cache before we even get to
+                // calling this subcommand e.g. when first setting up
+                // the account.
+                let identity_id = cache.get("identity")
+                    .context("Unable to retrieve user ID")?;
 
-                let refresh_token = ensure_refresh_token(&cache, &id_provider_client);
-                let id_token = account::refresh_auth(&id_provider_client, &refresh_token)
-                    .sync()
-                    .or_else(|err| {
-                        // TODO only login if the failure is due to an auth error
-                        println!("Getting refresh token failed: {}", err);
-                        let creds = prompt::login();
-                        account::login(&id_provider_client, creds.username, creds.password)
-                            .sync()
-                            .or_else(|e| {
-                                println!("Login failed: {}", e);
-                                Err(e)
-                            })
-                            .and_then(|resp| {
-                                let token = resp.clone()
-                                    .authentication_result.expect("Failed")
-                                    .refresh_token.expect("Missing refresh token");
-                                cache.set_encrypted(
-                                    "refresh_token",
-                                    token.as_bytes().to_vec()
-                                ).expect("Failed to cache refresh token");
-                                Ok(resp)})
-                    })
-                    .context("Failed to get id token")?
-                    .authentication_result.expect("No auth result")
-                    .id_token.expect("No access token");
-                let identity_id = ensure_identity_id(&cache, &id_client, &id_token);
-                let aws_creds = account::aws_credentials(&id_client, &identity_id, &id_token)
-                    .sync()
-                    .context("Failed to fetch AWS credentials")?
-                    .credentials.expect("Missing credentials");
-                let creds_provider = StaticProvider::new(
-                    aws_creds.access_key_id.expect("Missing access key"),
-                    aws_creds.secret_key.expect("Missing secret key"),
-                    Some(aws_creds.session_token.expect("Missing session token")),
-                    Some(aws_creds.expiration.expect("Missing expiration") as i64)
-                );
-
-                let request_dispatcher = HttpClient::new();
-                let s3_client = S3Client::new_with(
-                    request_dispatcher.context("Failed to make an HttpClient")?,
-                    creds_provider,
-                    Region::UsWest2
-                );
-
+                let ProjectId(project_id) = conf.project_id.clone();
                 let mut out_path = home_path.clone();
                 out_path.push(&project_id);
                 out_path.push("pkg");
                 fs::create_dir_all(&out_path).context("Failed to make pkg directory")?;
 
-                let mut wasm_path = project_path.clone();
-                wasm_path.push(conf.wasm_path);
-
-                let index_template = handlebars.render("index", &json!({
-                    "name": conf.name,
-                    "author": conf.author,
-                    "description": conf.description,
-                    "manifest_path": "./manifest.json",
-                    "app_js_path": "./app.js",
-                    "sw_js_path": "./sw.js",
-                    "wasm_path": "./app.wasm",
-                }));
-                let manifest_template = handlebars.render("manifest", &json!({
-                    "name": conf.name,
-                    "short_name": conf.short_name,
-                    "bg_color": "#ffffff",
-                    "description": conf.description
-                }));
-                let service_worker_template = handlebars.render("sw.js", &json!({}));
-
-                let wasm_package = wasm_package(
-                    conf.lib.unwrap(),
-                    wasm_path,
-                    out_path,
-                ).context("Failed to generate wasm package")?;
-
                 // All app files will be prefixed in the s3 bucket by the user's
                 // cognito identity ID and project_id
                 let key_prefix = format!("{}/{}", &identity_id, &project_id);
 
-                let mut files = vec![
-                    (format!("{}/index.html", key_prefix),
-                     String::from("text/html"),
-                     index_template.context("Failed to render index.html")?.into_bytes()),
-                    (format!("{}/manifest.json", key_prefix),
-                     String::from("application/manifest+json"),
-                     manifest_template.context("Failed to render manifest.json")?.into_bytes()),
-                    (format!("{}/sw.js", key_prefix),
-                     String::from("application/javascript"),
-                     service_worker_template.context("Failed to render sw.js")?.into_bytes()),
-                    (format!("{}/app.js", key_prefix),
-                     String::from("application/javascript"),
-                     fs::read_to_string(wasm_package.js).context("Failed to read js file")?.into_bytes()),
-                    (format!("{}/app.wasm", key_prefix),
-                     String::from("application/wasm"),
-                     {
-                         let mut f = File::open(wasm_package.wasm).context("Failed to read wasm file")?;
-                         let mut buffer = Vec::new();
-                         f.read_to_end(&mut buffer).context("Failed to read to bytes")?;
-                         buffer
-                     }),
-                ];
+                let mut wasm_path = project_path.clone();
+                wasm_path.push(conf.wasm_path.clone());
 
-                // Add in homescreen icons to upload, use defaults if
-                // not specified in the config
-                if let Some(icons) = conf.icons {
-                    for (size, path) in icons.to_vec() {
-                        let mut f = File::open(path)
-                            .context("Icon file does not exist")?;
-                        let mut buffer = Vec::new();
-                        f.read_to_end(&mut buffer)
-                            .context("Failed to read icon to bytes")?;
-                        files.push(
-                            (format!("{}/img/icons/homescreen_{}.png", key_prefix, size),
-                             String::from("image/png"),
-                             buffer)
-                        )
-                    }
-                } else {
-                    for (size, bytes) in DEFAULT_ICONS.iter() {
-                        files.push(
-                            (format!("{}/img/icons/homescreen_{}.png", key_prefix, size),
-                             String::from("image/png"),
-                             bytes.to_owned())
-                        );
-                    };
-                }
+                // Build the app with all the components
+                let wasm_cmpnt = WasmComponent::new(wasm_path, out_path);
+                let pwa_cmpnt = PwaComponent::new(&conf, handlebars);
+                let icon_cmpnt = IconComponent::new(&conf);
+                let splashscreen_cmpnt = SplashscreenComponent::new(&conf);
 
-                // Add in splashscreens for iOS devices, use defaults if
-                // not specified in the config
-                if let Some(splashscreens) = conf.splashscreens {
-                    for (device, path) in splashscreens.to_vec() {
-                        let mut f = File::open(path)
-                            .context("Splashscreen file does not exist")?;
-                        let mut buffer = Vec::new();
-                        f.read_to_end(&mut buffer)
-                            .context("Failed to read splashscreen to bytes")?;
-                        files.push(
-                            (format!("{}/img/splashscreens/{}.png", key_prefix, device),
-                             String::from("image/png"),
-                             buffer)
-                        )
-                    };
-                } else {
-                    for (device, bytes) in DEFAULT_SPLASHSCREENS.iter() {
-                        files.push(
-                            (format!("{}/img/splashscreens/{}.png", key_prefix, device),
-                             String::from("image/png"),
-                             bytes.to_owned())
-                        );
-                    };
-                }
+                let mut app = AppBuilder::new(s3_client, key_prefix);
+                app
+                    .component(wasm_cmpnt)
+                    .component(pwa_cmpnt)
+                    .component(icon_cmpnt)
+                    .component(splashscreen_cmpnt);
 
-                for (file_name, mimetype, body) in files.into_iter() {
-                    let req = PutObjectRequest {
-                        bucket: String::from(S3_BUCKET_NAME),
-                        key: file_name.clone(),
-                        body: Some(ByteStream::from(body)),
-                        content_type: Some(mimetype),
-                        ..Default::default()
-                    };
-
-                    s3_client.put_object(req)
-                        .sync()
-                        .context(format!("Failed to upload file to S3: {}", file_name))?;
-                };
+                // TODO check the size of the app
+                app.upload().context("Failed to upload app")?;
 
                 let location = format!(
                     "{}://{}/{}/{}/index.html",
