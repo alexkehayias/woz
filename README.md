@@ -6,7 +6,15 @@ Woz is a WebAssembly progressive web app (PWA) toolchain for deploying performan
 
 Before we begin you must have a recent version of [Rust](https://www.rust-lang.org) installed as well as [wasm-bindgen](https://github.com/rustwasm/wasm-bindgen).
 
-Install Woz:
+### Install Woz
+
+Using `cargo`:
+
+```sh
+cargo install woz
+```
+
+Alternatively you can install `woz` using a prebuilt bin (macOS only):
 
 ```sh
 wget https://woz.sh/install/macos/woz &&
@@ -14,7 +22,7 @@ mv ./woz /usr/local/bin/ &&
 chmod +x /usr/local/bin/woz
 ```
 
-Setup and deploy your project:
+### Setup and deploy
 
 ```sh
 woz setup
