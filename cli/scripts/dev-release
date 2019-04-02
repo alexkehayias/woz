@@ -1,0 +1,4 @@
+set -a; . ../env-dev; set +a
+cargo build --release
+mv ./target/release/woz /usr/local/bin/woz-dev
+cd ../cli

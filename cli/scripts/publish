@@ -1,0 +1,5 @@
+# Set environment variables to production values
+set -a; . ../env-prod; set +a
+cargo publish --allow-dirty
+# Go back to local development environment variables
+set -a; . ../env-dev; set +a
