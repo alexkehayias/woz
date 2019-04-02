@@ -27,7 +27,6 @@ mod prompt;
 mod account;
 mod config;
 mod template;
-mod package;
 mod cache;
 mod builder;
 mod components;
