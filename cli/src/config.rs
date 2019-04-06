@@ -22,17 +22,17 @@ pub static DEFAULT_PROJECT_LIB_RS: &str = include_str!(concat!(env!("WOZ_PROJECT
 // Making these all static even though they will only be accessed via
 // DEFAULT_ICONS so that it's a compile error if the default icon
 // files don't exist.
-static DEFAULT_ICON_48X48: &'static [u8; 6623] = include_bytes!(concat!(env!("WOZ_CLI_PROJECT_ROOT"), "/resources/icons/48x48.png"));
-static DEFAULT_ICON_72X72: &'static [u8; 6623] = include_bytes!(concat!(env!("WOZ_CLI_PROJECT_ROOT"), "/resources/icons/72x72.png"));
-static DEFAULT_ICON_96X96: &'static [u8; 6623] = include_bytes!(concat!(env!("WOZ_CLI_PROJECT_ROOT"), "/resources/icons/96x96.png"));
-static DEFAULT_ICON_144X144: &'static [u8; 6623] = include_bytes!(concat!(env!("WOZ_CLI_PROJECT_ROOT"), "/resources/icons/144x144.png"));
-static DEFAULT_ICON_168X168: &'static [u8; 6623] = include_bytes!(concat!(env!("WOZ_CLI_PROJECT_ROOT"), "/resources/icons/168x168.png"));
-static DEFAULT_ICON_192X192: &'static [u8; 6623] = include_bytes!(concat!(env!("WOZ_CLI_PROJECT_ROOT"), "/resources/icons/192x192.png"));
+static DEFAULT_ICON_48X48: &'static [u8; 831] = include_bytes!(concat!(env!("WOZ_CLI_PROJECT_ROOT"), "/resources/icons/48x48.png"));
+static DEFAULT_ICON_72X72: &'static [u8; 1196] = include_bytes!(concat!(env!("WOZ_CLI_PROJECT_ROOT"), "/resources/icons/72x72.png"));
+static DEFAULT_ICON_96X96: &'static [u8; 1538] = include_bytes!(concat!(env!("WOZ_CLI_PROJECT_ROOT"), "/resources/icons/96x96.png"));
+static DEFAULT_ICON_144X144: &'static [u8; 2217] = include_bytes!(concat!(env!("WOZ_CLI_PROJECT_ROOT"), "/resources/icons/144x144.png"));
+static DEFAULT_ICON_168X168: &'static [u8; 2566] = include_bytes!(concat!(env!("WOZ_CLI_PROJECT_ROOT"), "/resources/icons/168x168.png"));
+static DEFAULT_ICON_192X192: &'static [u8; 2870] = include_bytes!(concat!(env!("WOZ_CLI_PROJECT_ROOT"), "/resources/icons/192x192.png"));
 
 // iOS icon sizes
-static DEFAULT_ICON_152X152: &'static [u8; 6623] = include_bytes!(concat!(env!("WOZ_CLI_PROJECT_ROOT"), "/resources/icons/152x152.png"));
-static DEFAULT_ICON_167X167: &'static [u8; 6623] = include_bytes!(concat!(env!("WOZ_CLI_PROJECT_ROOT"), "/resources/icons/167x167.png"));
-static DEFAULT_ICON_180X180: &'static [u8; 6623] = include_bytes!(concat!(env!("WOZ_CLI_PROJECT_ROOT"), "/resources/icons/180x180.png"));
+static DEFAULT_ICON_152X152: &'static [u8; 2321] = include_bytes!(concat!(env!("WOZ_CLI_PROJECT_ROOT"), "/resources/icons/152x152.png"));
+static DEFAULT_ICON_167X167: &'static [u8; 2489] = include_bytes!(concat!(env!("WOZ_CLI_PROJECT_ROOT"), "/resources/icons/167x167.png"));
+static DEFAULT_ICON_180X180: &'static [u8; 2717] = include_bytes!(concat!(env!("WOZ_CLI_PROJECT_ROOT"), "/resources/icons/180x180.png"));
 
 lazy_static!{
     pub static ref DEFAULT_ICONS: HashMap<&'static str, Vec<u8>> = {
@@ -50,16 +50,16 @@ lazy_static!{
     };
 }
 
-static DEFAULT_SPLASH_IPHONE5: &'static [u8; 37880] = include_bytes!("../resources/splashscreens/iphone5_splash.png");
-static DEFAULT_SPLASH_IPHONE6: &'static [u8; 39604] = include_bytes!("../resources/splashscreens/iphone6_splash.png");
-static DEFAULT_SPLASH_IPHONEPLUS: &'static [u8; 51706] = include_bytes!("../resources/splashscreens/iphoneplus_splash.png");
-static DEFAULT_SPLASH_IPHONEX: &'static [u8; 44797] = include_bytes!("../resources/splashscreens/iphonex_splash.png");
-static DEFAULT_SPLASH_IPHONEXR: &'static [u8; 42280] = include_bytes!("../resources/splashscreens/iphonexr_splash.png");
-static DEFAULT_SPLASH_IPHONEXSMAX: &'static [u8; 54950] = include_bytes!("../resources/splashscreens/iphonexsmax_splash.png");
-static DEFAULT_SPLASH_IPAD: &'static [u8; 54919] = include_bytes!("../resources/splashscreens/ipad_splash.png");
-static DEFAULT_SPLASH_IPADPRO1: &'static [u8; 60819] = include_bytes!("../resources/splashscreens/ipadpro1_splash.png");
-static DEFAULT_SPLASH_IPADPRO3: &'static [u8; 62394] = include_bytes!("../resources/splashscreens/ipadpro3_splash.png");
-static DEFAULT_SPLASH_IPADPRO2: &'static [u8; 71374] = include_bytes!("../resources/splashscreens/ipadpro2_splash.png");
+static DEFAULT_SPLASH_IPHONE5: &'static [u8; 7293] = include_bytes!("../resources/splashscreens/iphone5_splash.png");
+static DEFAULT_SPLASH_IPHONE6: &'static [u8; 8922] = include_bytes!("../resources/splashscreens/iphone6_splash.png");
+static DEFAULT_SPLASH_IPHONEPLUS: &'static [u8; 17976] = include_bytes!("../resources/splashscreens/iphoneplus_splash.png");
+static DEFAULT_SPLASH_IPHONEX: &'static [u8; 19105] = include_bytes!("../resources/splashscreens/iphonex_splash.png");
+static DEFAULT_SPLASH_IPHONEXR: &'static [u8; 11686] = include_bytes!("../resources/splashscreens/iphonexr_splash.png");
+static DEFAULT_SPLASH_IPHONEXSMAX: &'static [u8; 21352] = include_bytes!("../resources/splashscreens/iphonexsmax_splash.png");
+static DEFAULT_SPLASH_IPAD: &'static [u8; 19248] = include_bytes!("../resources/splashscreens/ipad_splash.png");
+static DEFAULT_SPLASH_IPADPRO1: &'static [u8; 21788] = include_bytes!("../resources/splashscreens/ipadpro1_splash.png");
+static DEFAULT_SPLASH_IPADPRO3: &'static [u8; 23329] = include_bytes!("../resources/splashscreens/ipadpro3_splash.png");
+static DEFAULT_SPLASH_IPADPRO2: &'static [u8; 30724] = include_bytes!("../resources/splashscreens/ipadpro2_splash.png");
 
 lazy_static!{
     pub static ref DEFAULT_SPLASHSCREENS: HashMap<&'static str, Vec<u8>> = {
