@@ -10,7 +10,7 @@ fn username_password() -> (String, String) {
 
     stdout.write_all(b"Username: ").unwrap();
     stdout.flush().expect("Error");
-    let username = stdin.read_line().expect("Fail").unwrap();
+    let username = stdin.read_line().expect("Fail").unwrap().to_lowercase();
 
     stdout.write_all(b"Password: ").unwrap();
     stdout.flush().expect("Error");
@@ -31,7 +31,7 @@ fn email() -> String {
 
     stdout.write_all(b"Email: ").unwrap();
     stdout.flush().expect("Error");
-    stdin.read_line().expect("Fail").unwrap()
+    stdin.read_line().expect("Fail").unwrap().to_lowercase()
 }
 
 #[derive(Debug, Clone)]
