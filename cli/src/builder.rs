@@ -1,3 +1,4 @@
+use std::path::PathBuf;
 use rusoto_s3::*;
 use rusoto_core::ByteStream;
 use failure::Error;
@@ -32,13 +33,12 @@ pub trait AppComponent {
 /// the `component` method.
 pub struct AppBuilder {
     file_prefix: String,
-    client: S3Client,
     pub inner: Vec<FileUpload>,
 }
 
 impl AppBuilder {
-    pub fn new(client: S3Client, file_prefix: String) -> Self {
-        Self { client, file_prefix, inner: Vec::new() }
+    pub fn new(file_prefix: String) -> Self {
+        Self { file_prefix, inner: Vec::new() }
     }
 }
 
@@ -53,12 +53,18 @@ impl AppBuilder {
         self
     }
 
-    /// Returns the size of the overall application
-    fn size(&self) -> usize {
-        unimplemented!("TODO");
+    /// Returns the size in bytes of the overall app file bundle
+    pub fn size(&self) -> usize {
+        let mut size = 0;
+        for FileUpload {bytes, ..} in self.inner.iter() {
+            size += bytes.len();
+        }
+        size
     }
 
-    pub fn upload(&self) -> Result<(), Error> {
+    /// Upload the app file bundle to S3. It will be immediately
+    /// available on the public internet.
+    pub fn upload(&self, client: S3Client) -> Result<(), Error> {
         for FileUpload {key, mimetype, bytes} in self.inner.iter() {
             let req = PutObjectRequest {
                 bucket: String::from(S3_BUCKET_NAME),
@@ -68,10 +74,15 @@ impl AppBuilder {
                 ..Default::default()
             };
 
-            self.client.put_object(req)
+            client.put_object(req)
                 .sync()
                 .context(format!("Failed to upload file to S3: {}", key))?;
         };
         Ok(())
+    }
+
+    /// Download the app bundle to disk at the specified directory.
+    pub fn download(&self, dir: PathBuf) -> Result<(), Error> {
+        unimplemented!("TODO");
     }
 }

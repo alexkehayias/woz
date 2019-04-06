@@ -10,6 +10,9 @@ pub const IDENTITY_POOL_ID: &str = env!("WOZ_IDENTITY_POOL_ID");
 pub const IDENTITY_POOL_URL: &str = env!("WOZ_IDENTITY_POOL_URL");
 pub const CLIENT_ID: &str = env!("WOZ_CLIENT_ID");
 pub const S3_BUCKET_NAME: &str = env!("WOZ_S3_BUCKET_NAME");
+
+pub const MAX_APP_SIZE_MB: usize = 20;
+
 pub const ENCRYPTION_PASSWORD: &str = env!("WOZ_ENCRYPTION_PASSWORD");
 pub const ENCRYPTION_SALT: &str = env!("WOZ_ENCRYPTION_SALT");
 

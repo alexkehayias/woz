@@ -239,15 +239,27 @@ wasm_path=\"target/wasm32-unknown-unknown/release/{}.wasm\"
                 let icon_cmpnt = IconComponent::new(&conf);
                 let splashscreen_cmpnt = SplashscreenComponent::new(&conf);
 
-                let mut app = AppBuilder::new(s3_client, key_prefix);
+                let mut app = AppBuilder::new(key_prefix);
                 app
                     .component(wasm_cmpnt)
                     .component(pwa_cmpnt)
                     .component(icon_cmpnt)
                     .component(splashscreen_cmpnt);
 
-                // TODO check the size of the app
-                app.upload().context("Failed to upload app")?;
+                // Sets an upper bounds for the size and app that can
+                // be uploaded to prevent allowing really big files
+                // from being uploaded accidentally
+                let app_size = app.size();
+                if (app_size / 1_000_000) > MAX_APP_SIZE_MB {
+                    return Err(
+                        format_err!(
+                            "The maximum size for deploying an app is {}MB. Your app is {}MB",
+                            MAX_APP_SIZE_MB,
+                            app_size
+                        )
+                    )
+                }
+                app.upload(s3_client).context("Failed to upload app")?;
 
                 let location = format!(
                     "{}://{}/{}/{}/index.html",
