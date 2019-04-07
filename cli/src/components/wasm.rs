@@ -6,22 +6,22 @@ use std::path::PathBuf;
 
 use failure::Error;
 use failure::ResultExt;
+use crate::file_upload::FileUpload;
+use super::AppComponent;
 
-use crate::builder::{AppComponent, FileUpload};
 
-
-pub struct WasmComponent {
+pub struct WasmComponent<'a> {
     wasm_path: PathBuf,
-    out_path: PathBuf
+    out_path: &'a PathBuf
 }
 
-impl WasmComponent {
-    pub fn new(wasm_path: PathBuf, out_path: PathBuf) -> Self {
-        Self {wasm_path, out_path }
+impl<'a> WasmComponent<'a> {
+    pub fn new(wasm_path: PathBuf, out_path: &'a PathBuf) -> Self {
+        Self { wasm_path, out_path }
     }
 }
 
-impl AppComponent for WasmComponent {
+impl<'a> AppComponent for WasmComponent<'a> {
     fn files(&self, file_prefix: &String) -> Result<Vec<FileUpload>, Error> {
         let command = format!(
             "wasm-bindgen {} --no-typescript --no-modules --out-dir {} --out-name app",

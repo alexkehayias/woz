@@ -5,7 +5,8 @@ use failure::Error;
 use failure::ResultExt;
 
 use crate::config::{Config, DEFAULT_SPLASHSCREENS};
-use crate::builder::{AppComponent, FileUpload};
+use super::AppComponent;
+use crate::file_upload::FileUpload;
 
 
 pub struct SplashscreenComponent<'a> {

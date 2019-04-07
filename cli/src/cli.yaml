@@ -28,6 +28,8 @@ subcommands:
         - NAME:
             help: Name of the project
             required: true
+  - build:
+      about: Build the app locally
   - deploy:
       about: Deploy this version of the app
   - update:

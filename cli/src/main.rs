@@ -31,6 +31,7 @@ mod cache;
 mod builder;
 mod components;
 mod upload_client;
+mod file_upload;
 
 use config::*;
 use template::load_templates;
@@ -48,6 +49,7 @@ enum Command {
     Setup,
     Deploy,
     Update,
+    Build,
     Unknown,
 }
 
@@ -59,11 +61,11 @@ impl From<&str> for Command {
             "setup" => Command::Setup,
             "deploy" => Command::Deploy,
             "update" => Command::Update,
+            "build" => Command::Build,
             _ => Command::Unknown
         }
     }
 }
-
 
 fn run() -> Result<(), Error> {
     let handlebars = load_templates().context("Failed to load templates")?;
@@ -183,19 +185,47 @@ wasm_path=\"target/wasm32-unknown-unknown/release/{}.wasm\"
 
                 println!("Ready to be deployed with 'woz deploy'");
             },
+            Command::Build => {
+                println!("Building...");
+
+                // TODO move this to a fn
+                // Load the woz config if present or use default config
+                let mut conf_path = project_path.clone();
+                conf_path.push("woz.toml");
+                let conf_str = fs::read_to_string(conf_path.clone())
+                    .context(format!("Couldn't find woz config file at {}",
+                                     conf_path.clone().to_str().unwrap()))?;
+                let conf: Config = toml::from_str(&conf_str)
+                    .context("Failed to parse woz config")?;
+
+                let ProjectId(project_id) = conf.project_id.clone();
+                let mut out_path = home_path.clone();
+                out_path.push(&project_id);
+                out_path.push("pkg");
+                fs::create_dir_all(&out_path).context("Failed to make pkg directory")?;
+
+                let mut wasm_path = project_path.clone();
+                wasm_path.push(conf.wasm_path.clone());
+
+                // Build the app with all the components
+                let wasm_cmpnt = WasmComponent::new(wasm_path, &out_path);
+                let pwa_cmpnt = PwaComponent::new(&conf, handlebars);
+                let icon_cmpnt = IconComponent::new(&conf);
+                let splashscreen_cmpnt = SplashscreenComponent::new(&conf);
+
+                let file_prefix = String::from(out_path.to_str().unwrap());
+                let mut app = AppBuilder::new();
+                app
+                    .component(&wasm_cmpnt)
+                    .component(&pwa_cmpnt)
+                    .component(&icon_cmpnt)
+                    .component(&splashscreen_cmpnt)
+                    .build(&project_path, &file_prefix).context("Failed to build app")?;
+                app.download().context("Failed to download files from the build")?;
+                println!("App package directory can be found at {}", file_prefix);
+            },
             Command::Deploy => {
                 println!("Deploying...");
-                // First compile the project in release mode
-                let mut build_proc = process::Command::new("sh")
-                    .arg("-c")
-                    .arg("cargo build --release --target wasm32-unknown-unknown")
-                    .stdout(process::Stdio::piped())
-                    .spawn()
-                    .context("Failed to spawn build")?;
-                let exit_code = build_proc.wait().context("Failed to wait for build")?;
-                if !exit_code.success() {
-                    return Err(format_err!("Build failed, please check output above."))
-                }
 
                 // Load the woz config if present or use default config
                 let mut conf_path = project_path.clone();
@@ -234,17 +264,18 @@ wasm_path=\"target/wasm32-unknown-unknown/release/{}.wasm\"
                 wasm_path.push(conf.wasm_path.clone());
 
                 // Build the app with all the components
-                let wasm_cmpnt = WasmComponent::new(wasm_path, out_path);
+                let wasm_cmpnt = WasmComponent::new(wasm_path, &out_path);
                 let pwa_cmpnt = PwaComponent::new(&conf, handlebars);
                 let icon_cmpnt = IconComponent::new(&conf);
                 let splashscreen_cmpnt = SplashscreenComponent::new(&conf);
 
-                let mut app = AppBuilder::new(key_prefix);
+                let mut app = AppBuilder::new();
                 app
-                    .component(wasm_cmpnt)
-                    .component(pwa_cmpnt)
-                    .component(icon_cmpnt)
-                    .component(splashscreen_cmpnt);
+                    .component(&wasm_cmpnt)
+                    .component(&pwa_cmpnt)
+                    .component(&icon_cmpnt)
+                    .component(&splashscreen_cmpnt)
+                    .build(&project_path, &key_prefix).context("Failed to build app")?;
 
                 // Sets an upper bounds for the size and app that can
                 // be uploaded to prevent allowing really big files
@@ -281,5 +312,15 @@ wasm_path=\"target/wasm32-unknown-unknown/release/{}.wasm\"
 }
 
 fn main() {
-    run().map_err(|e| println!("{}", e)).ok();
+    run()
+        .map_err(|e| {
+            println!("{}\n{}", e,
+                     e.iter_causes()
+                     .map(|f| format!("Caused by: {}", f))
+                     .collect::<Vec<String>>()
+                     .join("\n"));
+            std::process::exit(1)
+        })
+        .ok();
+    std::process::exit(0);
 }

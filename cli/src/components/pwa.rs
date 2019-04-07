@@ -3,7 +3,8 @@ use failure::ResultExt;
 use handlebars::Handlebars;
 
 use crate::config::Config;
-use crate::builder::{AppComponent, FileUpload};
+use super::AppComponent;
+use crate::file_upload::FileUpload;
 
 
 pub struct PwaComponent<'a> {
