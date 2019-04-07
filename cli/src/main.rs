@@ -214,13 +214,16 @@ wasm_path=\"target/wasm32-unknown-unknown/release/{}.wasm\"
                 let splashscreen_cmpnt = SplashscreenComponent::new(&conf);
 
                 let file_prefix = String::from(out_path.to_str().unwrap());
+                let build_env = &conf.env.to_owned().unwrap_or(Environment::Development);
                 let mut app = AppBuilder::new();
                 app
                     .component(&wasm_cmpnt)
                     .component(&pwa_cmpnt)
                     .component(&icon_cmpnt)
                     .component(&splashscreen_cmpnt)
-                    .build(&project_path, &file_prefix).context("Failed to build app")?;
+                    .build(&project_path, &file_prefix, &build_env)
+                    .context("Failed to build app")?;
+
                 app.download().context("Failed to download files from the build")?;
                 println!("App package directory can be found at {}", file_prefix);
             },
@@ -269,13 +272,15 @@ wasm_path=\"target/wasm32-unknown-unknown/release/{}.wasm\"
                 let icon_cmpnt = IconComponent::new(&conf);
                 let splashscreen_cmpnt = SplashscreenComponent::new(&conf);
 
+                let build_env = &conf.env.to_owned().unwrap_or(Environment::Development);
                 let mut app = AppBuilder::new();
                 app
                     .component(&wasm_cmpnt)
                     .component(&pwa_cmpnt)
                     .component(&icon_cmpnt)
                     .component(&splashscreen_cmpnt)
-                    .build(&project_path, &key_prefix).context("Failed to build app")?;
+                    .build(&project_path, &key_prefix, &build_env)
+                    .context("Failed to build app")?;
 
                 // Sets an upper bounds for the size and app that can
                 // be uploaded to prevent allowing really big files
@@ -322,5 +327,5 @@ fn main() {
             std::process::exit(1)
         })
         .ok();
-    std::process::exit(0);
+    std::process::exit(0)
 }

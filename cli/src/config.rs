@@ -101,7 +101,7 @@ impl<'de> Deserialize<'de> for Lib {
     }
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Clone)]
 pub enum Environment {
     Release,
     Development,

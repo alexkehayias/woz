@@ -9,6 +9,7 @@ use failure::ResultExt;
 use crate::config::S3_BUCKET_NAME;
 use crate::file_upload::FileUpload;
 use crate::components::AppComponent;
+use crate::config::Environment;
 
 
 /// Builds the application bundle, a collection of files to be
@@ -17,13 +18,13 @@ use crate::components::AppComponent;
 /// the `component` method.
 pub struct AppBuilder<'a> {
     components: Vec<&'a AppComponent>,
-    inner: Vec<FileUpload>,
+    files: Vec<FileUpload>,
 }
 
 impl<'a> AppBuilder<'a> {
     pub fn new() -> Self {
         Self {
-            inner: Vec::new(),
+            files: Vec::new(),
             components: Vec::new(),
         }
     }
@@ -37,19 +38,25 @@ impl<'a> AppBuilder<'a> {
     /// Returns the size in bytes of the overall app file bundle
     pub fn size(&self) -> usize {
         let mut size = 0;
-        for FileUpload {bytes, ..} in self.inner.iter() {
+        for FileUpload {bytes, ..} in self.files.iter() {
             size += bytes.len();
         }
         size
     }
 
-    pub fn build(&mut self, project_path: &PathBuf, file_prefix: &String) -> Result<(), Error> {
+    pub fn build(&mut self, project_path: &PathBuf,
+                 file_prefix: &String, env: &Environment) -> Result<(), Error> {
         // Do a cargo build
         // TODO pass in dev or release build
+        let release_flag = match env {
+            Environment::Release => " --release",
+            _ => ""
+        };
+
         let mut build_proc = process::Command::new("sh")
             .current_dir(project_path)
             .arg("-c")
-            .arg("cargo build --target wasm32-unknown-unknown")
+            .arg(format!("cargo build --target wasm32-unknown-unknown{}", release_flag))
             .stdout(process::Stdio::piped())
             .spawn()
             .context("Failed to spawn build")?;
@@ -61,7 +68,7 @@ impl<'a> AppBuilder<'a> {
         for cmpnt in self.components.iter() {
             let files = cmpnt.files(file_prefix).unwrap();
             for f in files.into_iter() {
-                self.inner.push(f);
+                self.files.push(f);
             };
         };
 
@@ -71,7 +78,7 @@ impl<'a> AppBuilder<'a> {
     /// Upload the app file bundle to S3. It will be immediately
     /// available on the public internet.
     pub fn upload(&self, client: S3Client) -> Result<(), Error> {
-        for FileUpload {filename, mimetype, bytes} in self.inner.iter() {
+        for FileUpload {filename, mimetype, bytes} in self.files.iter() {
             let req = PutObjectRequest {
                 bucket: String::from(S3_BUCKET_NAME),
                 key: filename.to_owned(),
@@ -89,7 +96,7 @@ impl<'a> AppBuilder<'a> {
 
     /// Download the app bundle to disk
     pub fn download(&self) -> Result<(), Error> {
-        for FileUpload {filename, mimetype: _, bytes} in self.inner.iter() {
+        for FileUpload {filename, mimetype: _, bytes} in self.files.iter() {
             println!("Downloading file {}", filename);
             let mut dir = PathBuf::from(filename);
             dir.pop();
