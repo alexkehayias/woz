@@ -30,7 +30,7 @@ impl<'a> AppBuilder<'a> {
     }
 
     /// Adds the component to the build
-    pub fn component(&mut self, component: &'a AppComponent) -> &mut Self {
+    pub fn component(&mut self, component: &'a dyn AppComponent) -> &mut Self {
         self.components.push(component);
         self
     }
