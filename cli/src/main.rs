@@ -207,9 +207,14 @@ wasm_path=\"target/wasm32-unknown-unknown/release/{}.wasm\"
                 let mut wasm_path = project_path.clone();
                 wasm_path.push(conf.wasm_path.clone());
 
+                // HACK this url doesn't actually point to anything
+                // because this is a local build. Since we are missing
+                // the identity ID it's hard to create the actual url
+                let url = format!("{}://{}/index.html",  SCHEME, NETLOC);
+
                 // Build the app with all the components
                 let wasm_cmpnt = WasmComponent::new(wasm_path, &out_path);
-                let pwa_cmpnt = PwaComponent::new(&conf, handlebars);
+                let pwa_cmpnt = PwaComponent::new(&conf, &url, handlebars);
                 let icon_cmpnt = IconComponent::new(&conf);
                 let splashscreen_cmpnt = SplashscreenComponent::new(&conf);
 
@@ -266,9 +271,17 @@ wasm_path=\"target/wasm32-unknown-unknown/release/{}.wasm\"
                 let mut wasm_path = project_path.clone();
                 wasm_path.push(conf.wasm_path.clone());
 
+                let url = format!(
+                    "{}://{}/{}/{}/index.html",
+                    SCHEME,
+                    NETLOC,
+                    identity_id,
+                    project_id
+                );
+
                 // Build the app with all the components
                 let wasm_cmpnt = WasmComponent::new(wasm_path, &out_path);
-                let pwa_cmpnt = PwaComponent::new(&conf, handlebars);
+                let pwa_cmpnt = PwaComponent::new(&conf, &url, handlebars);
                 let icon_cmpnt = IconComponent::new(&conf);
                 let splashscreen_cmpnt = SplashscreenComponent::new(&conf);
 
@@ -296,15 +309,7 @@ wasm_path=\"target/wasm32-unknown-unknown/release/{}.wasm\"
                     )
                 }
                 app.upload(s3_client).context("Failed to upload app")?;
-
-                let location = format!(
-                    "{}://{}/{}/{}/index.html",
-                    SCHEME,
-                    NETLOC,
-                    identity_id,
-                    project_id
-                );
-                println!("{}", format!("Your app is available at {}", location));
+                println!("{}", format!("Your app is available at {}", url));
             }
             // Sub command parsing will print the error and exit
             // before we get to this match statement so the only way

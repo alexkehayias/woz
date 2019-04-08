@@ -37,16 +37,16 @@
     <link rel="manifest" href="{{ manifest_path }}">
     <meta property="og:locale" content="en_US">
     <meta property="og:type" content="article">
-    <meta property="og:title" content="TODO">
-    <meta property="og:description" content="TODO">
-    <meta property="og:url" content="TODO">
-    <meta property="og:site_name" content="TODO">
-    <meta property="og:image" content="icons/TODO.jpeg">
+    <meta property="og:title" content="{{ name }}">
+    <meta property="og:description" content="{{ description }}">
+    <meta property="og:url" content="{{ url }}">
+    <meta property="og:site_name" content="{{ name }}">
+    <meta property="og:image" content="./img/icons/homescreen_192x192.png">
     <meta name="twitter:card" content="summary">
-    <meta name="twitter:description" content="TODO">
-    <meta name="twitter:title" content="woz.sh">
-    <meta name="twitter:site" content="@alexkehayias">
-    <meta name="twitter:image" content="TODO.jpeg">
+    <meta name="twitter:description" content="{{ description }}">
+    <meta name="twitter:title" content="{{ name }}">
+    <meta name="twitter:site" content="{{ url }}">
+    <meta name="twitter:image" content="./img/icons/homescreen_192x192.png">
     <meta name="twitter:creator" content="@alexkehayias">
     <script src="{{ app_js_path }}"></script>
     <style>
@@ -63,13 +63,7 @@
   </head>
   {{!-- Enable tap effects on buttons and links --}}
   <body ontouchstart="">
-    <header>
-      <h1>{{ name }}</h1>
-    </header>
     <main id="app"></main>
-    <footer>
-      <p>© Woz 2019</p>
-    </footer>
     <script>
      wasm_bindgen('{{ wasm_path }}')
        .then(wasm_bindgen.render)

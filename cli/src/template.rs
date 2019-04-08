@@ -24,6 +24,7 @@ fn test_index_templates() {
             "name": "Test App",
             "author": "Alex Kehayias",
             "description": "Description here",
+            "url": "http://localhost",
             "manifest_path": "./manifest.json",
             "app_js_path": "./app.js",
             "sw_js_path": "./sw.js",

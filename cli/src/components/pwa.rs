@@ -9,12 +9,13 @@ use crate::file_upload::FileUpload;
 
 pub struct PwaComponent<'a> {
     conf: &'a Config,
-    templates: Handlebars,
+    url: &'a String,
+    templates: Handlebars
 }
 
 impl<'a> PwaComponent<'a> {
-    pub fn new(conf: &'a Config, templates: Handlebars) -> Self {
-        Self { conf, templates }
+    pub fn new(conf: &'a Config, url: &'a String, templates: Handlebars) -> Self {
+        Self { conf, url, templates }
     }
 }
 
@@ -24,6 +25,7 @@ impl<'a> AppComponent for PwaComponent<'a> {
             "name": self.conf.name,
             "author": self.conf.author,
             "description": self.conf.description,
+            "url": self.url,
             "manifest_path": "./manifest.json",
             "app_js_path": "./app.js",
             "sw_js_path": "./sw.js",
