@@ -1,5 +1,6 @@
 use std::io::{stdin, stdout, Write};
 use termion::input::TermRead;
+use termion::event::Key;
 
 
 fn username_password() -> (String, String) {
@@ -66,4 +67,27 @@ pub fn login() -> Credentials {
         username: username.to_owned(),
         password: password.to_owned(),
     }
+}
+
+pub fn is_email_verified() -> bool {
+    let stdout = stdout();
+    let mut stdout = stdout.lock();
+    let stdin = stdin();
+    let stdin = stdin.lock();
+
+    stdout.write_all(b"Have you clicked the link in the verification email? [y/n] ")
+        .unwrap();
+    stdout.flush().expect("Error");
+
+    let mut out = false;
+    for c in stdin.keys() {
+        match c.unwrap() {
+            Key::Char('y') => out = true,
+            Key::Char('n') => out = false,
+            _ => {println!("Sorry didn't catch that"); out = false},
+        };
+        stdout.flush().expect("Error");
+        break
+    };
+    out
 }

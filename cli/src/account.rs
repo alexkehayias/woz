@@ -8,7 +8,9 @@ use rusoto_cognito_idp::*;
 use crate::config::*;
 
 
-pub fn signup(client: CognitoIdentityProviderClient, email: String, username: String, password: String) -> RusotoFuture<SignUpResponse, SignUpError> {
+pub fn signup(client: &CognitoIdentityProviderClient, email: String,
+              username: String, password: String)
+              -> RusotoFuture<SignUpResponse, SignUpError> {
     let mut request = SignUpRequest::default();
     request.username = username;
     request.password = password;

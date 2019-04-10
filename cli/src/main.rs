@@ -5,7 +5,6 @@ use std::fs::File;
 use std::fs;
 use std::str;
 use std::env;
-use std::error::Error as StdError;
 use std::process;
 use toml;
 
@@ -22,6 +21,7 @@ use failure::ResultExt;
 
 use rusoto_core::Region;
 use rusoto_cognito_idp::*;
+use rusoto_cognito_identity::*;
 
 mod prompt;
 mod account;
@@ -100,20 +100,72 @@ fn run() -> Result<(), Error> {
                 fs::create_dir_all(&home_path).context("Failed to make home directory")?;
                 // TODO first check if there is an existing installation
                 let values = prompt::signup();
-                let client = CognitoIdentityProviderClient::new(Region::UsWest2);
-                account::signup(client, values.email, values.username, values.password)
+                let id_provider_client = CognitoIdentityProviderClient::new(Region::UsWest2);
+                let id_client = CognitoIdentityClient::new(Region::UsWest2);
+
+                let user_id = account::signup(&id_provider_client,
+                                              values.email.clone(),
+                                              values.username.clone(),
+                                              values.password.clone())
                     .sync()
-                    .and_then(|resp| {
-                        let user_id = resp.user_sub;
-                        cache.set("user", user_id.as_bytes().to_vec())
-                            .expect("Failed add user ID to cache");
-                        Ok(())
-                    })
-                    .or_else(|e| {
-                        println!("Signup failed {}", e.description());
-                        Err(e)
-                    })?;
-                println!("Please check your inbox for an email to verify your account.");
+                    .context("Signup failed")?
+                    .user_sub;
+
+                cache.set("user", user_id.as_bytes().to_vec())
+                    .context("Failed to add user ID to cache")?;
+
+                // Prompt the user to confirm they clicked the verification link
+                let mut email_verified = false;
+                while !email_verified {
+                    println!("Please check your inbox for an email to verify your account.");
+                    if prompt::is_email_verified() {
+                        // It's still possible for this to fail if the user
+                        // says they are verified, but they aren't
+                        account::login(&id_provider_client,
+                                       values.username.clone(),
+                                       values.password.clone())
+                            .sync()
+                            .map(|resp| {
+                                let auth_result = resp.authentication_result
+                                    .expect("No auth result");
+
+                                // Store the refresh token
+                                let refresh_token = auth_result.refresh_token
+                                    .expect("No access token found");
+
+                                cache.set("refresh_token",
+                                          refresh_token.as_bytes().to_vec())
+                                    .expect("Failed to set identity ID in cache");
+
+                                // Store the identity ID
+                                let id_token = auth_result.id_token
+                                    .expect("No ID token found");
+
+                                let identity_id = account::identity_id(&id_client,
+                                                                       &id_token)
+                                    .sync()
+                                    .expect("Getting identity ID didn't work")
+                                    .identity_id.expect("No identity ID");
+
+                                cache.set("identity", identity_id.as_bytes().to_vec())
+                                    .expect("Failed to set identity ID in cache");
+
+                                email_verified = true;
+                            })
+                            .or_else(|e| {
+                                match e {
+                                    InitiateAuthError::UserNotConfirmed(_) => {
+                                        println!("Auth failed, have you clicked the link in the verification email?");
+                                        Ok(())
+                                    },
+                                    _ => Err(e)
+                                }
+                            })
+                            .context("Failed to auth")?;
+                    }
+                };
+
+                println!("Your account has been successfully set up! You can now deploy to your applications using 'woz deploy'");
             },
             Command::NewProject => {
                 // This unwrap is safe because the cli preparses and
