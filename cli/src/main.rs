@@ -82,6 +82,13 @@ fn run() -> Result<(), Error> {
         .context("Failed to get project path")?;
     println!("Using project path {}", project_path.to_str().unwrap());
 
+    let conf_path = input.args.get("config")
+        .map_or({let mut c_path = project_path.clone();
+                 c_path.push("woz.toml");
+                 c_path},
+                |arg| PathBuf::from(&arg.vals[0]));
+    println!("Using config path {}", conf_path.to_str().unwrap());
+
     let home_path = input.args.get("home")
         .map_or(default_home_path(),
                 |arg| Ok(PathBuf::from(&arg.vals[0])))
@@ -94,8 +101,9 @@ fn run() -> Result<(), Error> {
         match Command::from(sub) {
             // Setup should result in
             // 1. An account
-            // 2. A unique user ID
-            // 3. A configured dotfile
+            // 2. A verified email address
+            // 3. A unique user ID
+            // 4. A refresh token
             Command::Setup => {
                 fs::create_dir_all(&home_path).context("Failed to make home directory")?;
                 // TODO first check if there is an existing installation
@@ -214,11 +222,7 @@ wasm_path=\"target/wasm32-unknown-unknown/release/{}.wasm\"
             },
             Command::Build => {
                 println!("Building...");
-
-                // TODO move this to a fn
                 // Load the woz config if present or use default config
-                let mut conf_path = project_path.clone();
-                conf_path.push("woz.toml");
                 let conf_str = fs::read_to_string(conf_path.clone())
                     .context(format!("Couldn't find woz config file at {}",
                                      conf_path.clone().to_str().unwrap()))?;
@@ -261,10 +265,7 @@ wasm_path=\"target/wasm32-unknown-unknown/release/{}.wasm\"
             },
             Command::Deploy => {
                 println!("Deploying...");
-
                 // Load the woz config if present or use default config
-                let mut conf_path = project_path.clone();
-                conf_path.push("woz.toml");
                 let conf_str = fs::read_to_string(conf_path.clone())
                     .context(format!("Couldn't find woz config file at {}",
                                      conf_path.clone().to_str().unwrap()))?;

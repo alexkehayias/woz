@@ -17,6 +17,13 @@ args:
       value_name: PATH
       help: Sets the woz home directory path
       takes_value: true
+  - config:
+      short: c
+      long: config
+      value_name: PATH
+      help: Sets the woz config file to use
+      takes_value: true
+
 subcommands:
   - setup:
       about: Setup a woz.sh account and authentication
