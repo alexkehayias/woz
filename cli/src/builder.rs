@@ -6,6 +6,9 @@ use rusoto_s3::*;
 use rusoto_core::ByteStream;
 use failure::Error;
 use failure::ResultExt;
+use flate2::Compression;
+use flate2::write::GzEncoder;
+
 use crate::config::S3_BUCKET_NAME;
 use crate::file_upload::FileUpload;
 use crate::components::AppComponent;
@@ -79,11 +82,16 @@ impl<'a> AppBuilder<'a> {
     /// available on the public internet.
     pub fn upload(&self, client: S3Client) -> Result<(), Error> {
         for FileUpload {filename, mimetype, bytes} in self.files.iter() {
+            let mut gzip = GzEncoder::new(Vec::new(), Compression::default());
+            gzip.write_all(bytes).context("Failed to gzip encode bytes")?;
+            let compressed_bytes = gzip.finish().context("Failed to gzip file")?;
+
             let req = PutObjectRequest {
                 bucket: String::from(S3_BUCKET_NAME),
                 key: filename.to_owned(),
-                body: Some(ByteStream::from(bytes.to_owned())),
+                body: Some(ByteStream::from(compressed_bytes)),
                 content_type: Some(mimetype.to_owned()),
+                content_encoding: Some(String::from("gzip")),
                 ..Default::default()
             };
 
