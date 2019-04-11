@@ -1,11 +1,8 @@
 //! The cli used to interact with the woz service.
 
 use std::io;
-use std::str;
-
 use failure::Error;
 use failure::ResultExt;
-
 use rusoto_core::Region;
 use rusoto_core::request::HttpClient;
 use rusoto_credential::StaticProvider;
@@ -41,26 +38,13 @@ fn ensure_refresh_token(cache: &FileCache, client: &CognitoIdentityProviderClien
         .unwrap()
 }
 
-fn ensure_identity_id(cache: &FileCache, client: &CognitoIdentityClient, id_token: &str)
-                      -> String {
-    cache.get("identity")
-        .or_else::<io::Error, _>(|_| {
-            let id = account::identity_id(client, id_token)
-                .sync()
-                .expect("Failed to get identity ID")
-                .identity_id.expect("No identity ID");
-            cache.set("identity", id.as_bytes().to_vec())
-                .expect("Failed to add identity to cache");
-            Ok(id)
-        })
-        .unwrap()
-}
-
 pub fn authenticated_client(cache: &FileCache) -> Result<S3Client, Error> {
     let id_provider_client = CognitoIdentityProviderClient::new(Region::UsWest2);
     let id_client = CognitoIdentityClient::new(Region::UsWest2);
 
     let refresh_token = ensure_refresh_token(&cache, &id_provider_client);
+    let identity_id = cache.get("identity").context("Unable to retrieve user ID")?;
+
     let id_token = account::refresh_auth(&id_provider_client, &refresh_token)
         .sync()
         .or_else(|err| {
@@ -87,7 +71,6 @@ pub fn authenticated_client(cache: &FileCache) -> Result<S3Client, Error> {
         .authentication_result.expect("No auth result")
         .id_token.expect("No access token");
 
-    let identity_id = ensure_identity_id(&cache, &id_client, &id_token);
     let aws_creds = account::aws_credentials(&id_client, &identity_id, &id_token)
         .sync()
         .context("Failed to fetch AWS credentials")?

@@ -121,47 +121,22 @@ fn run() -> Result<(), Error> {
                     if prompt::is_email_verified() {
                         // It's still possible for this to fail if the user
                         // says they are verified, but they aren't
-                        account::login(&id_provider_client,
+                        account::setup(&id_provider_client,
+                                       &id_client,
+                                       &cache,
                                        values.username.clone(),
                                        values.password.clone())
-                            .sync()
-                            .map(|resp| {
-                                let auth_result = resp.authentication_result
-                                    .expect("No auth result");
-
-                                // Store the refresh token
-                                let refresh_token = auth_result.refresh_token
-                                    .expect("No access token found");
-
-                                cache.set("refresh_token",
-                                          refresh_token.as_bytes().to_vec())
-                                    .expect("Failed to set identity ID in cache");
-
-                                // Store the identity ID
-                                let id_token = auth_result.id_token
-                                    .expect("No ID token found");
-
-                                let identity_id = account::identity_id(&id_client,
-                                                                       &id_token)
-                                    .sync()
-                                    .expect("Getting identity ID didn't work")
-                                    .identity_id.expect("No identity ID");
-
-                                cache.set("identity", identity_id.as_bytes().to_vec())
-                                    .expect("Failed to set identity ID in cache");
-
-                                email_verified = true;
-                            })
                             .or_else(|e| {
                                 match e {
                                     InitiateAuthError::UserNotConfirmed(_) => {
                                         println!("Auth failed, have you clicked the link in the verification email?");
+                                        email_verified = false;
                                         Ok(())
                                     },
                                     _ => Err(e)
                                 }
                             })
-                            .context("Failed to auth")?;
+                            .context("Failed to set up account")?;
                     }
                 };
 
@@ -299,14 +274,6 @@ wasm_path=\"target/wasm32-unknown-unknown/release/{}.wasm\"
                 let s3_client = upload_client::authenticated_client(&cache)
                     .context("Unable to initialize upload client")?;
 
-                // Here we are relying on this implicit, synchronous
-                // behavior and reading the identity ID from the file
-                // cache because at this point it should be there.
-                //
-                // TODO: Probably want to guarantee that the identity
-                // ID exists in the file cache before we even get to
-                // calling this subcommand e.g. when first setting up
-                // the account.
                 let identity_id = cache.get("identity")
                     .context("Unable to retrieve user ID")?;
 

@@ -1,10 +1,10 @@
 use std::collections::HashMap;
-
 use rusoto_core::RusotoFuture;
 use rusoto_cognito_identity::*;
 use rusoto_cognito_idp::CognitoIdentityProvider;
 use rusoto_cognito_idp::*;
 
+use crate::cache::FileCache;
 use crate::config::*;
 
 
@@ -56,6 +56,41 @@ pub fn identity_id(client: &CognitoIdentityClient, id_token: &str)
     req.identity_pool_id = IDENTITY_POOL_ID.to_string();
     req.logins = Some(logins);
     client.get_id(req)
+}
+
+/// After a user has been signed up via `signup`, set up their account
+/// by generating and storing an identity and refresh token. Result
+/// will fail if the user has not confirmed their email address.
+pub fn setup(id_provider_client: &CognitoIdentityProviderClient,
+             id_client: &CognitoIdentityClient,
+             cache: &FileCache,
+             username: String, password: String) -> Result<(), InitiateAuthError> {
+    login(&id_provider_client, username, password)
+        .sync()
+        .map(|resp| {
+            let auth_result = resp.authentication_result
+                .expect("No auth result");
+
+            // Store the refresh token
+            let refresh_token = auth_result.refresh_token
+                .expect("No access token found");
+
+            cache.set("refresh_token",
+                      refresh_token.as_bytes().to_vec())
+                .expect("Failed to set identity ID in cache");
+
+            // Store the identity ID
+            let id_token = auth_result.id_token
+                .expect("No ID token found");
+
+            let identity_id = identity_id(&id_client, &id_token)
+                .sync()
+                .expect("Getting identity ID didn't work")
+                .identity_id.expect("No identity ID");
+
+            cache.set("identity", identity_id.as_bytes().to_vec())
+                .expect("Failed to set identity ID in cache");
+        })
 }
 
 type AWSCredentialsResponse = RusotoFuture<GetCredentialsForIdentityResponse,
