@@ -75,8 +75,7 @@ pub fn setup(id_provider_client: &CognitoIdentityProviderClient,
             let refresh_token = auth_result.refresh_token
                 .expect("No access token found");
 
-            cache.set("refresh_token",
-                      refresh_token.as_bytes().to_vec())
+            cache.set_encrypted("refresh_token", refresh_token.as_bytes().to_vec())
                 .expect("Failed to set identity ID in cache");
 
             // Store the identity ID

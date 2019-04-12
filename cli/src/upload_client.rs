@@ -61,10 +61,8 @@ pub fn authenticated_client(cache: &FileCache) -> Result<S3Client, Error> {
                     let token = resp.clone()
                         .authentication_result.expect("Failed")
                         .refresh_token.expect("Missing refresh token");
-                    cache.set_encrypted(
-                        "refresh_token",
-                        token.as_bytes().to_vec()
-                    ).expect("Failed to cache refresh token");
+                    cache.set_encrypted("refresh_token", token.as_bytes().to_vec())
+                        .expect("Failed to cache refresh token");
                     Ok(resp)})
         })
         .context("Failed to get id token")?
