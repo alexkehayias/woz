@@ -31,6 +31,7 @@ static DEFAULT_ICON_96X96: &'static [u8; 1538] = include_bytes!(concat!(env!("WO
 static DEFAULT_ICON_144X144: &'static [u8; 2217] = include_bytes!(concat!(env!("WOZ_CLI_PROJECT_ROOT"), "/resources/icons/144x144.png"));
 static DEFAULT_ICON_168X168: &'static [u8; 2566] = include_bytes!(concat!(env!("WOZ_CLI_PROJECT_ROOT"), "/resources/icons/168x168.png"));
 static DEFAULT_ICON_192X192: &'static [u8; 2870] = include_bytes!(concat!(env!("WOZ_CLI_PROJECT_ROOT"), "/resources/icons/192x192.png"));
+static DEFAULT_ICON_512X512: &'static [u8; 8042] = include_bytes!(concat!(env!("WOZ_CLI_PROJECT_ROOT"), "/resources/icons/512x512.png"));
 
 // iOS icon sizes
 static DEFAULT_ICON_152X152: &'static [u8; 2321] = include_bytes!(concat!(env!("WOZ_CLI_PROJECT_ROOT"), "/resources/icons/152x152.png"));
@@ -49,6 +50,7 @@ lazy_static!{
         m.insert("168x168", DEFAULT_ICON_168X168.to_vec());
         m.insert("180x180", DEFAULT_ICON_180X180.to_vec());
         m.insert("192x192", DEFAULT_ICON_192X192.to_vec());
+        m.insert("512x512", DEFAULT_ICON_512X512.to_vec());
         m
     };
 }
@@ -145,6 +147,7 @@ pub struct Icons {
     pub path_144x144: PathBuf,
     pub path_168x168: PathBuf,
     pub path_192x192: PathBuf,
+    pub path_512x512: PathBuf,
 }
 
 impl Icons {
@@ -156,6 +159,7 @@ impl Icons {
             ("144x144", &self.path_144x144),
             ("168x168", &self.path_168x168),
             ("192x192", &self.path_192x192),
+            ("512x512", &self.path_512x512),
         ]
     }
 }
