@@ -5,6 +5,8 @@ cargo build --release
 cp target/release/woz ../site/static/install/macos/woz
 # Copy locally
 cp ./target/release/woz /usr/local/bin/woz
+# Publish to crates.io
+cargo publish --allow-dirty
 # Deploy the site so the new version is available
 cd ../site
 ./scripts/deploy
