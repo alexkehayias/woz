@@ -125,6 +125,11 @@ impl<'de> Deserialize<'de> for Environment {
 
 #[derive(Debug, Serialize, Clone)]
 pub struct ProjectId(pub String);
+impl Default for ProjectId {
+    fn default() -> Self {
+        Self(String::from("My App"))
+    }
+}
 
 impl<'de> Deserialize<'de> for ProjectId {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
@@ -196,6 +201,7 @@ impl SplashScreens {
 }
 
 #[derive(Debug, Deserialize)]
+#[serde(default)]
 pub struct Config {
     pub project_id: ProjectId,
     pub lib: Option<Lib>,
@@ -245,4 +251,18 @@ fn default_home_path_test() {
         .expect("Could not get a $USER");
     let path_str = format!("/Users/{}/.woz", user);
     assert_eq!(PathBuf::from(path_str), default_home_path().unwrap());
+}
+
+#[test]
+fn config_defaults_test() {
+    let conf_str = "\
+name=\"Woz Example App\"
+project_id=\"seed\"
+short_name=\"Example\"
+# lib=\"wasm-bindgen\"
+env=\"production\"
+wasm_path=\"target/wasm32-unknown-unknown/release/seed_app.wasm\"\
+";
+    let conf: Config = toml::from_str(&conf_str).unwrap();
+    assert!(conf.description.is_some());
 }
