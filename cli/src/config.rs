@@ -105,7 +105,7 @@ impl<'de> Deserialize<'de> for Lib {
 
 #[derive(Debug, Serialize, Clone)]
 pub enum Environment {
-    Release,
+    Production,
     Development,
     Unknown(String)
 }
@@ -116,7 +116,7 @@ impl<'de> Deserialize<'de> for Environment {
     {
         let s = String::deserialize(deserializer)?;
         Ok(match s.as_str() {
-            "release" => Environment::Release,
+            "production" => Environment::Production,
             "development" => Environment::Development,
             _ => Environment::Unknown(s),
         })
@@ -224,7 +224,7 @@ impl Default for Config {
             short_name: Some(String::from("App")),
             author: None,
             description: Some(String::from("App built with woz.sh")),
-            env: Some(Environment::Release),
+            env: Some(Environment::Development),
             wasm_path: PathBuf::new(),
             icons: None,
             splashscreens: None,
@@ -255,6 +255,7 @@ fn default_home_path_test() {
 
 #[test]
 fn config_defaults_test() {
+    use super::*;
     let conf_str = "\
 name=\"Woz Example App\"
 project_id=\"seed\"

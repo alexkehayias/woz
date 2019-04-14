@@ -50,9 +50,8 @@ impl<'a> AppBuilder<'a> {
     pub fn build(&mut self, project_path: &PathBuf,
                  file_prefix: &String, env: &Environment) -> Result<(), Error> {
         // Do a cargo build
-        // TODO pass in dev or release build
         let release_flag = match env {
-            Environment::Release => " --release",
+            Environment::Production => " --release",
             _ => ""
         };
 
