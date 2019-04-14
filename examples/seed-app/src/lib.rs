@@ -1,94 +1,102 @@
-#[macro_use]
-extern crate seed;
+#[macro_use] extern crate seed;
 use seed::prelude::*;
 
+struct Model;
 
-// Model
-
-struct Model {
-    count: i32,
-    what_we_count: String
-}
-
-// Setup a default here, for initialization later.
 impl Default for Model {
     fn default() -> Self {
-        Self {
-            count: 0,
-            what_we_count: "click".into()
-        }
+        Self { }
     }
 }
-
-
-// Update
 
 #[derive(Clone)]
-enum Msg {
-    Increment,
-    Decrement,
-    ChangeWWC(String),
-}
+enum Msg {}
 
-/// The sole source of updating the model
 fn update(msg: Msg, model: &mut Model) -> Update<Msg> {
-    match msg {
-        Msg::Increment => model.count += 1,
-        Msg::Decrement => model.count -= 1,
-        Msg::ChangeWWC(what_we_count) => model.what_we_count = what_we_count,
-    }
     Render.into()
 }
 
-
-// View
-
-/// A simple component.
-fn success_level(clicks: i32) -> El<Msg> {
-    let descrip = match clicks {
-        0 ... 5 => "Not very many 🙁",
-        6 ... 9 => "I got my first real six-string 😐",
-        10 ... 11 => "Spinal Tap 🙂",
-        _ => "Double pendulum 🙃"
-    };
-    p![ descrip ]
-}
-
-/// The top-level component we pass to the virtual dom.
 fn view(model: &Model) -> El<Msg> {
-    let plural = if model.count == 1 {""} else {"s"};
+    let font_family = "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, Helvetica, Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\"";
 
-    // Attrs, Style, Events, and children may be defined separately.
     let outer_style = style!{
-            "display" => "flex";
-            "flex-direction" => "column";
-            "text-align" => "center"
+        "padding" => "0 20px";
+        "box-sizing" => "border-box";
+        "position" => "absolute";
+        "width" => "100%";
+        "height" => "100%";
+        "display" => "flex";
+        "align-items" => "center";
+        "justify-content" => "center";
+        "background" => "#f5f6fa";
     };
 
-     div![ outer_style,
-        h1![ "The Grand Total" ],
-        div![
-            style!{
-                // Example of conditional logic in a style.
-                "color" => if model.count > 4 {"purple"} else {"gray"};
-                // When passing numerical values to style!, "px" is implied.
-                "border" => "2px solid #004422"; "padding" => 20
-            },
-            // We can use normal Rust code and comments in the view.
-            h3![ format!("{} {}{} so far", model.count, model.what_we_count, plural) ],
-            button![ simple_ev(Ev::Click, Msg::Increment), "+" ],
-            button![ simple_ev(Ev::Click, Msg::Decrement), "-" ],
-
-            // Optionally-displaying an element
-            if model.count >= 10 { h2![ style!{"padding" => 50}, "Nice!" ] } else { seed::empty() }
-        ],
-        success_level(model.count),  // Incorporating a separate component
-
-        h3![ "What precisely is it we're counting?" ],
-        input![ attrs!{At::Value => model.what_we_count}, input_ev(Ev::Input, Msg::ChangeWWC) ]
+    div![outer_style,
+         div![
+             style!{
+                 "padding" => "50px 30px";
+                 "background" => "white";
+                 "border-radius" => "5px";
+                 "box-shadow" => "0px 0px 20px 0px #d8d8d8"
+             },
+             div![
+                 style!{
+                     "text-align" => "center";
+                     "font-size" => "1.8em";
+                     "line-height" => "90px";
+                     "border-radius" => "50%";
+                     "width" => "80px";
+                     "height" => "80px";
+                     "background" => "#f6e58d";
+                     "margin" => "auto auto 20px auto";
+                 },
+                 "🎉"
+             ],
+             h1![
+                 style!{
+                     "font-size" => "1.5em";
+                     "font-family" => { font_family };
+                     "font-weight" => "700";
+                     "line-height" => "1.35em";
+                     "color" => "#30336b";
+                     "margin-bottom" => "20px";
+                     "text-align" => "center";
+                 },
+                 "Hello from WebAssembly!"],
+             p![
+                 style!{
+                     "font-family" => { font_family };
+                     "font-size" => "1.1em";
+                     "text-align" => "center";
+                     "line-height" => "1.2em";
+                     "color" => "#535c68";
+                     "margin-bottom" => "30px";
+                 },
+                 "This app is written entirely using the Rust programming \
+                  language and packaged as a progressive web app (PWA) \
+                  using Woz."
+             ],
+             a![attrs!{"href" => "https://woz.sh"},
+                style!{
+                    "width" => "100%";
+                    "background" => "#6ab04c";
+                    "padding" => "16px 8px";
+                    "font-family" => { font_family };
+                    "font-size" => "1em";
+                    "font-weight" => "bold";
+                    "color" => "white";
+                    "display" => "block";
+                    "text-decoration" => "none";
+                    "text-align" => "center";
+                    "border-bottom" => "2px solid green";
+                    "border-radius" => "5px";
+                    "box-sizing" => "border-box";
+                },
+                "Learn more"
+             ]
+         ],
     ]
 }
-
 
 #[wasm_bindgen]
 pub fn render() {
