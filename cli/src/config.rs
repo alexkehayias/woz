@@ -18,6 +18,8 @@ pub const ENCRYPTION_SALT: &str = env!("WOZ_ENCRYPTION_SALT");
 
 pub static DEFAULT_PROJECT_LIB_RS: &str = include_str!(concat!(env!("WOZ_PROJECT_ROOT"), "/examples/seed-app/src/lib.rs"));
 
+pub static LANDING_PAGE_CSS: &str = include_str!(concat!(env!("WOZ_CLI_PROJECT_ROOT"), "/resources/styles/landing_page.css"));
+
 // Default icons are included in the bin. This will make it bigger so
 // maybe in the future these should be downloaded to the user's local
 // filesystem on install.

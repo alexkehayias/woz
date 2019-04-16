@@ -48,12 +48,12 @@ impl<'a> AppComponent for WasmComponent<'a> {
 
         let uploads = vec![
             FileUpload::new(
-                format!("{}/app.js", &file_prefix),
+                format!("{}/app/app.js", &file_prefix),
                 String::from("application/javascript"),
                 fs::read_to_string(js_path).context("Failed to read js file")?.into_bytes()
             ),
             FileUpload::new(
-                format!("{}/app.wasm", &file_prefix),
+                format!("{}/app/app.wasm", &file_prefix),
                 String::from("application/wasm"),
                 {
                     let mut f = File::open(wasm_path).context("Failed to read wasm file")?;

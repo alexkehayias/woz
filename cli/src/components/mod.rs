@@ -5,6 +5,7 @@ pub mod wasm;
 pub mod pwa;
 pub mod icon;
 pub mod splashscreen;
+pub mod landing_page;
 
 
 /// Implement this trait to extend an AppBuilder to include additional

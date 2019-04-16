@@ -10,18 +10,25 @@ use crate::file_upload::FileUpload;
 pub struct PwaComponent<'a> {
     conf: &'a Config,
     url: &'a String,
-    templates: Handlebars
+    project_id: &'a String,
+    identity_id: &'a String,
+    version: &'a String,
+    templates: &'a Handlebars
 }
 
 impl<'a> PwaComponent<'a> {
-    pub fn new(conf: &'a Config, url: &'a String, templates: Handlebars) -> Self {
-        Self { conf, url, templates }
+    pub fn new(conf: &'a Config, url: &'a String,
+               templates: &'a Handlebars,
+               identity_id: &'a String,
+               project_id: &'a String,
+               version: &'a String) -> Self {
+        Self { conf, url, templates, identity_id, project_id, version }
     }
 }
 
 impl<'a> AppComponent for PwaComponent<'a> {
     fn files(&self, file_prefix: &String) -> Result<Vec<FileUpload>, Error> {
-        let index_template = self.templates.render("index", &json!({
+        let index_template = self.templates.render("app_index", &json!({
             "name": self.conf.name,
             "author": self.conf.author,
             "description": self.conf.description,
@@ -37,16 +44,20 @@ impl<'a> AppComponent for PwaComponent<'a> {
             "bg_color": "#ffffff",
             "description": self.conf.description
         }));
-        let service_worker_template = self.templates.render("sw.js", &json!({}));
+        let service_worker_template = self.templates.render("sw.js", &json!({
+            "identity_id": self.identity_id,
+            "project_id": self.project_id,
+            "version": self.version
+        }));
 
         let uploads = vec![
-            FileUpload::new(format!("{}/index.html", file_prefix),
+            FileUpload::new(format!("{}/app/index.html", file_prefix),
                             String::from("text/html"),
                             index_template.context("Failed to render index.html")?.into_bytes()),
-            FileUpload::new(format!("{}/manifest.json", file_prefix),
+            FileUpload::new(format!("{}/app/manifest.json", file_prefix),
                             String::from("application/manifest+json"),
                             manifest_template.context("Failed to render manifest.json")?.into_bytes()),
-            FileUpload::new(format!("{}/sw.js", file_prefix),
+            FileUpload::new(format!("{}/app/sw.js", file_prefix),
                             String::from("application/javascript"),
                             service_worker_template.context("Failed to render sw.js")?.into_bytes()),
         ];

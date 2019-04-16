@@ -1,0 +1,37 @@
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="{% block description %}{% endblock description %}">
+  <meta name="keywords" content="{% block keywords %}{% endblock keywords %}">
+  <meta name="title" content="{% block title %}{% endblock title %}">
+  <link rel="icon" href="/img/favicon.png">
+  <link rel="stylesheet" type="text/css" href="/main.css">
+</head>
+<body>
+  <div class="main-container">
+    <div class="row" style="margin-bottom: 20px;">
+      <div class="grid twelve">
+        <a href="https://woz.sh" style="text-decoration: none; color: inherit;">
+          <span class="hi">Woz</span>
+          <span style="display: inline-block; font-family: menlo; font-size: 14px; padding: 6px 0; font-weight: bold;">App Registry</span>
+        </a>
+      </div>
+    </div>
+    <main>
+      <h1>{{ name }}</h1>
+      {{#if author}}
+      <p>Created by {{ author }}</p>
+      {{/if}}
+      {{#if description }}
+      <p>{{ description }}</p>
+      {{/if}}
+      <p>You can safely install {{ name }} directly to your phone by adding it to your homescreen. Or use it right in your browser!</p>
+      <div style="margin-top: 30px;">
+        <a class="button" href="./app/index.html">Open App</a>
+      </div>
+    </main>
+  </div>
+  <footer>
+    <p>© 2019 Alex Kehayias</p>
+  </footer>
+</body>

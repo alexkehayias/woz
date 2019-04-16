@@ -41,6 +41,7 @@ use components::wasm::WasmComponent;
 use components::pwa::PwaComponent;
 use components::icon::IconComponent;
 use components::splashscreen::SplashscreenComponent;
+use components::landing_page::LandingPageComponent;
 
 
 enum Command {
@@ -65,6 +66,32 @@ impl From<&str> for Command {
             _ => Command::Unknown
         }
     }
+}
+
+fn git_hash() -> Result<String, Error> {
+    let proc = process::Command::new("sh")
+        .arg("-c")
+        .arg("git rev-parse --verify HEAD --short")
+        .stdout(process::Stdio::piped())
+        .spawn()
+        .context("Failed to spawn git process")?;
+
+    let output = proc.wait_with_output().context("Failed to wait for git")?;
+    if !output.status.success() {
+        return Err(format_err!("git failed"))
+    };
+
+    let hash = std::str::from_utf8(&output.stdout)
+        .context("Failed to parse git output to string")?
+        .trim_end();
+
+    Ok(hash.to_string())
+}
+
+#[test]
+fn git_hash_works() {
+    assert!(git_hash().is_ok());
+    assert_eq!(7, git_hash().unwrap().len());
 }
 
 fn run() -> Result<(), Error> {
@@ -222,6 +249,8 @@ wasm_path=\"target/wasm32-unknown-unknown/release/{}.wasm\"
             },
             Command::Build => {
                 println!("Building...");
+                let version = git_hash().context("Failed to get app version")?;
+
                 // Load the woz config if present or use default config
                 let conf_str = fs::read_to_string(conf_path.clone())
                     .context(format!("Couldn't find woz config file at {}",
@@ -238,14 +267,32 @@ wasm_path=\"target/wasm32-unknown-unknown/release/{}.wasm\"
                 let mut wasm_path = project_path.clone();
                 wasm_path.push(conf.wasm_path.clone());
 
-                // HACK this url doesn't actually point to anything
-                // because this is a local build. Since we are missing
-                // the identity ID it's hard to create the actual url
-                let url = format!("{}://{}/index.html",  SCHEME, NETLOC);
+                let identity_id = cache.get("identity")
+                    .context("Missing identity ID in cache")?;
+
+                let url = format!(
+                    "{}://{}/{}/{}/index.html",
+                    SCHEME,
+                    NETLOC,
+                    identity_id,
+                    project_id
+                );
 
                 // Build the app with all the components
+                let landing_page_cmpnt = LandingPageComponent::new(
+                    &conf,
+                    &url,
+                    &handlebars
+                );
                 let wasm_cmpnt = WasmComponent::new(wasm_path, &out_path);
-                let pwa_cmpnt = PwaComponent::new(&conf, &url, handlebars);
+                let pwa_cmpnt = PwaComponent::new(
+                    &conf,
+                    &url,
+                    &handlebars,
+                    &identity_id,
+                    &project_id,
+                    &version
+                );
                 let icon_cmpnt = IconComponent::new(&conf);
                 let splashscreen_cmpnt = SplashscreenComponent::new(&conf);
 
@@ -253,6 +300,7 @@ wasm_path=\"target/wasm32-unknown-unknown/release/{}.wasm\"
                 let build_env = &conf.env.to_owned().unwrap_or(Environment::Development);
                 let mut app = AppBuilder::new();
                 app
+                    .component(&landing_page_cmpnt)
                     .component(&wasm_cmpnt)
                     .component(&pwa_cmpnt)
                     .component(&icon_cmpnt)
@@ -265,6 +313,8 @@ wasm_path=\"target/wasm32-unknown-unknown/release/{}.wasm\"
             },
             Command::Deploy => {
                 println!("Deploying...");
+                let version = git_hash().context("Failed to get app version")?;
+
                 // Load the woz config if present or use default config
                 let conf_str = fs::read_to_string(conf_path.clone())
                     .context(format!("Couldn't find woz config file at {}",
@@ -300,14 +350,27 @@ wasm_path=\"target/wasm32-unknown-unknown/release/{}.wasm\"
                 );
 
                 // Build the app with all the components
+                let landing_page_cmpnt = LandingPageComponent::new(
+                    &conf,
+                    &url,
+                    &handlebars
+                );
                 let wasm_cmpnt = WasmComponent::new(wasm_path, &out_path);
-                let pwa_cmpnt = PwaComponent::new(&conf, &url, handlebars);
+                let pwa_cmpnt = PwaComponent::new(
+                    &conf,
+                    &url,
+                    &handlebars,
+                    &identity_id,
+                    &project_id,
+                    &version
+                );
                 let icon_cmpnt = IconComponent::new(&conf);
                 let splashscreen_cmpnt = SplashscreenComponent::new(&conf);
 
                 let build_env = &conf.env.to_owned().unwrap_or(Environment::Development);
                 let mut app = AppBuilder::new();
                 app
+                    .component(&landing_page_cmpnt)
                     .component(&wasm_cmpnt)
                     .component(&pwa_cmpnt)
                     .component(&icon_cmpnt)

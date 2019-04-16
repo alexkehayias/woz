@@ -2,14 +2,16 @@ use failure::Error;
 use handlebars::Handlebars;
 
 
-const INDEX_TEMPLATE: &str = include_str!("templates/index.html");
-const MANIFEST_TEMPLATE: &str = include_str!("templates/manifest.json");
-const SERVICE_WORKER_JS_TEMPLATE: &str = include_str!("templates/serviceworker.js");
+const LANDING_PAGE_INDEX_TEMPLATE: &str = include_str!("templates/landing_page/index.html");
+const APP_INDEX_TEMPLATE: &str = include_str!("templates/app/index.html");
+const MANIFEST_TEMPLATE: &str = include_str!("templates/app/manifest.json");
+const SERVICE_WORKER_JS_TEMPLATE: &str = include_str!("templates/app/serviceworker.js");
 
 pub fn load_templates() -> Result<Handlebars, Error> {
     let mut handlebars = Handlebars::new();
     handlebars.set_strict_mode(true);
-    handlebars.register_template_string("index", INDEX_TEMPLATE)?;
+    handlebars.register_template_string("landing_page_index", LANDING_PAGE_INDEX_TEMPLATE)?;
+    handlebars.register_template_string("app_index", APP_INDEX_TEMPLATE)?;
     handlebars.register_template_string("manifest", MANIFEST_TEMPLATE)?;
     handlebars.register_template_string("sw.js", SERVICE_WORKER_JS_TEMPLATE)?;
     Ok(handlebars)
@@ -19,7 +21,7 @@ pub fn load_templates() -> Result<Handlebars, Error> {
 fn test_index_templates() {
     let loader = load_templates().expect("Failed to load templates");
     let res = loader.render(
-        "index",
+        "app_index",
         &json!({
             "name": "Test App",
             "author": "Alex Kehayias",
