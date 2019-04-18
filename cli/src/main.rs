@@ -6,6 +6,8 @@ use std::fs;
 use std::str;
 use std::env;
 use std::process;
+use rand::{thread_rng, Rng};
+use rand::distributions::Alphanumeric;
 use toml;
 
 #[macro_use] extern crate clap;
@@ -92,6 +94,18 @@ fn git_hash() -> Result<String, Error> {
 fn git_hash_works() {
     assert!(git_hash().is_ok());
     assert_eq!(7, git_hash().unwrap().len());
+}
+
+fn random_version() -> String {
+    thread_rng()
+        .sample_iter(&Alphanumeric)
+        .take(7)
+        .collect()
+}
+
+#[test]
+fn random_version_works() {
+    assert_eq!(7, random_version().len());
 }
 
 fn run() -> Result<(), Error> {
@@ -249,7 +263,7 @@ wasm_path=\"target/wasm32-unknown-unknown/release/{}.wasm\"
             },
             Command::Build => {
                 println!("Building...");
-                let version = git_hash().context("Failed to get app version")?;
+                let version = random_version();
 
                 // Load the woz config if present or use default config
                 let conf_str = fs::read_to_string(conf_path.clone())
@@ -311,7 +325,7 @@ wasm_path=\"target/wasm32-unknown-unknown/release/{}.wasm\"
             },
             Command::Deploy => {
                 println!("Deploying...");
-                let version = git_hash().context("Failed to get app version")?;
+                let version = random_version();
 
                 // Load the woz config if present or use default config
                 let conf_str = fs::read_to_string(conf_path.clone())
