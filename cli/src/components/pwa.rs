@@ -34,6 +34,7 @@ impl<'a> AppComponent for PwaComponent<'a> {
             "app_js_path": "./app.js",
             "sw_js_path": "./sw.js",
             "wasm_path": "./app.wasm",
+            "bg_color": self.conf.bg_color
         }));
         let manifest_template = self.templates.render("manifest", &json!({
             "name": self.conf.name,
