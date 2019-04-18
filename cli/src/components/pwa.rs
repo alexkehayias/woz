@@ -38,7 +38,7 @@ impl<'a> AppComponent for PwaComponent<'a> {
         let manifest_template = self.templates.render("manifest", &json!({
             "name": self.conf.name,
             "short_name": self.conf.short_name,
-            "bg_color": "#ffffff",
+            "bg_color": self.conf.bg_color,
             "description": self.conf.description
         }));
         let service_worker_template = self.templates.render("sw.js", &json!({

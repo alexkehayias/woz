@@ -215,6 +215,7 @@ pub struct Config {
     pub wasm_path: PathBuf,
     pub icons: Option<Icons>,
     pub splashscreens: Option<SplashScreens>,
+    pub bg_color: Option<String>
 }
 
 impl Default for Config {
@@ -230,6 +231,7 @@ impl Default for Config {
             wasm_path: PathBuf::new(),
             icons: None,
             splashscreens: None,
+            bg_color: Some(String::from("#ffffff"))
         }
     }
 }
