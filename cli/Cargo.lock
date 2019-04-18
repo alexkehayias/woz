@@ -1704,7 +1704,7 @@ dependencies = [
 
 [[package]]
 name = "woz"
-version = "1.2.2"
+version = "1.2.3"
 dependencies = [
  "clap 2.32.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "failure 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
