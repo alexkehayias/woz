@@ -1,14 +1,14 @@
-var cacheName = '{{ identity_id }}/{{ project_id }}/{{ version }}';
+var cacheName = 'version-{{ version }}';
 var appShellFiles = [
   '/index.html',
 ];
 
 // On install, download files to the cache
 self.addEventListener('install', function(e) {
-  console.log('[Service Worker] Install');
+  console.log('[Service Worker] Installing');
   e.waitUntil(
     caches.open(cacheName).then(function(cache) {
-      console.log('[Service Worker] Caching all: app shell and content');
+      console.log('[Service Worker] Caching app shell and content');
       return cache.addAll(appShellFiles);
     })
   );
@@ -32,6 +32,7 @@ self.addEventListener('fetch', function(e) {
 
 // Clear out existing cache
 self.addEventListener('activate', function(e) {
+  console.log('[Service Worker] Activating');
   e.waitUntil(
     caches.keys().then(function(keyList) {
       return Promise.all(keyList.map(function(key) {

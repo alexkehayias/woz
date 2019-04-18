@@ -289,8 +289,6 @@ wasm_path=\"target/wasm32-unknown-unknown/release/{}.wasm\"
                     &conf,
                     &url,
                     &handlebars,
-                    &identity_id,
-                    &project_id,
                     &version
                 );
                 let icon_cmpnt = IconComponent::new(&conf);
@@ -360,8 +358,6 @@ wasm_path=\"target/wasm32-unknown-unknown/release/{}.wasm\"
                     &conf,
                     &url,
                     &handlebars,
-                    &identity_id,
-                    &project_id,
                     &version
                 );
                 let icon_cmpnt = IconComponent::new(&conf);

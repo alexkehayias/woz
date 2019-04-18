@@ -10,19 +10,16 @@ use crate::file_upload::FileUpload;
 pub struct PwaComponent<'a> {
     conf: &'a Config,
     url: &'a String,
-    project_id: &'a String,
-    identity_id: &'a String,
     version: &'a String,
     templates: &'a Handlebars
 }
 
 impl<'a> PwaComponent<'a> {
-    pub fn new(conf: &'a Config, url: &'a String,
+    pub fn new(conf: &'a Config,
+               url: &'a String,
                templates: &'a Handlebars,
-               identity_id: &'a String,
-               project_id: &'a String,
                version: &'a String) -> Self {
-        Self { conf, url, templates, identity_id, project_id, version }
+        Self { conf, url, templates, version }
     }
 }
 
@@ -45,8 +42,6 @@ impl<'a> AppComponent for PwaComponent<'a> {
             "description": self.conf.description
         }));
         let service_worker_template = self.templates.render("sw.js", &json!({
-            "identity_id": self.identity_id,
-            "project_id": self.project_id,
             "version": self.version
         }));
 
