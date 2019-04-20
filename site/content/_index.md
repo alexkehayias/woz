@@ -17,14 +17,6 @@ Using `cargo`:
 cargo install woz
 ```
 
-Alternatively you can install `woz` using a prebuilt bin (macOS only):
-
-```sh
-wget https://woz.sh/install/macos/woz &&
-mv ./woz /usr/local/bin/ &&
-chmod +x /usr/local/bin/woz
-```
-
 ### Setup and deploy
 
 ```sh
