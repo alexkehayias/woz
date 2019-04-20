@@ -157,11 +157,11 @@ hr {
     padding: 0;
 }
 
-button {
+button, a.button {
     outline: none;
     font-size: 1em;
     font-weight: 600;
-    padding: 10px 21px;
+    padding: 14px 21px;
     display: inline-block;
     border: 0px;
     margin-right: 10px;
@@ -170,9 +170,10 @@ button {
     color: white;
     text-decoration: none;
     border-radius: 4px;
+    box-sizing: border-box;
 }
 
-button:hover {
+button:hover, a.button:hover {
     background: #05594c;
     cursor: pointer;
 }
@@ -333,6 +334,10 @@ ul.pagination {
     }
     .hi {
         margin-left: 0;
+    }
+    button, a.button {
+        display: block;
+        width: 100%;
     }
 }
 
