@@ -8,6 +8,8 @@ use failure::Error;
 use failure::ResultExt;
 use flate2::Compression;
 use flate2::write::GzEncoder;
+use futures::prelude::*;
+use futures::future::join_all;
 
 use crate::config::S3_BUCKET_NAME;
 use crate::file_upload::FileUpload;
@@ -80,6 +82,8 @@ impl<'a> AppBuilder<'a> {
     /// Upload the app file bundle to S3. It will be immediately
     /// available on the public internet.
     pub fn upload(&self, client: S3Client) -> Result<(), Error> {
+        let mut async_uploads = Vec::new();
+
         for FileUpload {filename, mimetype, bytes} in self.files.iter() {
             let mut gzip = GzEncoder::new(Vec::new(), Compression::default());
             gzip.write_all(bytes).context("Failed to gzip encode bytes")?;
@@ -94,10 +98,10 @@ impl<'a> AppBuilder<'a> {
                 ..Default::default()
             };
 
-            client.put_object(req)
-                .sync()
-                .context(format!("Failed to upload file to S3: {}", filename))?;
+            async_uploads.push(client.put_object(req));
         };
+
+        join_all(async_uploads).wait().context("Failed to upload to S3")?;
         Ok(())
     }
 
