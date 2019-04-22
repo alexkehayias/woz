@@ -1,3 +1,5 @@
+use std::mem;
+use std::sync::{Arc, Mutex};
 use std::fs;
 use std::io::Write;
 use std::path::PathBuf;
@@ -9,7 +11,7 @@ use failure::ResultExt;
 use flate2::Compression;
 use flate2::write::GzEncoder;
 use futures::prelude::*;
-use futures::future::join_all;
+use tokio::prelude::*;
 
 use crate::config::S3_BUCKET_NAME;
 use crate::file_upload::FileUpload;
@@ -82,12 +84,22 @@ impl<'a> AppBuilder<'a> {
     /// Upload the app file bundle to S3. It will be immediately
     /// available on the public internet.
     pub fn upload(&self, client: S3Client) -> Result<(), Error> {
-        let mut async_uploads = Vec::new();
+        // In order to get errors out of tokio they need to be share
+        // the data in a thread safe way
+        let failures = Arc::new(Mutex::new(0));
+        // This clone allows us to check the failures after the event
+        // loop runs
+        let fail_count = Arc::clone(&failures);
 
-        for FileUpload {filename, mimetype, bytes} in self.files.iter() {
+        let work = stream::iter_ok(self.files.clone()).for_each(move |f| {
+            // References the outer failures. This will get moved into
+            // the scope of the async task closure
+            let fails_ref = Arc::clone(&failures);
+
+            let FileUpload {filename, mimetype, bytes} = f;
             let mut gzip = GzEncoder::new(Vec::new(), Compression::default());
-            gzip.write_all(bytes).context("Failed to gzip encode bytes")?;
-            let compressed_bytes = gzip.finish().context("Failed to gzip file")?;
+            gzip.write_all(&bytes).expect("Failed to gzip encode bytes");
+            let compressed_bytes = gzip.finish().expect("Failed to gzip file");
 
             let req = PutObjectRequest {
                 bucket: String::from(S3_BUCKET_NAME),
@@ -98,11 +110,35 @@ impl<'a> AppBuilder<'a> {
                 ..Default::default()
             };
 
-            async_uploads.push(client.put_object(req));
-        };
+            // Add the task so the event loop will pick it up
+            tokio::spawn(
+                client.put_object(req)
+                    // Tokio runtime expects futures to return ()
+                    .map(move |_| () )
+                    // Tokio runtime expects futures errors to be ()
+                    .map_err(move |e| {
+                        // Swap out the current count with our new
+                        // count of failures. I guess this is
+                        // threadsafe because Mutex is thread safe and
+                        // we've locked it?
+                        let mut fails = fails_ref.lock().unwrap();
+                        let mut new_fails = *fails + 1;
+                        mem::swap(&mut *fails, &mut new_fails);
+                        println!("File upload error: {}", e);
+                    })
+            )
+        });
 
-        join_all(async_uploads).wait().context("Failed to upload to S3")?;
-        Ok(())
+        // Actually execute the async tasks, blocking the main thread
+        // until idle (completed all spawned tasks)
+        tokio::run(work);
+
+        if *fail_count.lock().unwrap() > 0 {
+            Err(format_err!("Failed to upload app to S3"))
+        } else {
+            Ok(())
+        }
+
     }
 
     /// Download the app bundle to disk
