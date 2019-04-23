@@ -230,6 +230,7 @@ crate-type = [\"cdylib\"]".as_bytes()).unwrap();
 project_id=\"{}\"
 short_name=\"MyApp\"
 lib=\"wasm-bindgen\"
+env=\"production\"
 wasm_path=\"target/wasm32-unknown-unknown/release/{}.wasm\"
 ", project_name, project_name).as_bytes()).unwrap();
 
