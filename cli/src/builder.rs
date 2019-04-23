@@ -118,12 +118,10 @@ impl<'a> AppBuilder<'a> {
                     // Tokio runtime expects futures errors to be ()
                     .map_err(move |e| {
                         // Swap out the current count with our new
-                        // count of failures. I guess this is
-                        // threadsafe because Mutex is thread safe and
-                        // we've locked it?
-                        let mut fails = fails_ref.lock().unwrap();
-                        let mut new_fails = *fails + 1;
-                        mem::swap(&mut *fails, &mut new_fails);
+                        // count of failures.
+                        let mut fails = *fails_ref.lock().unwrap();
+                        let mut new_fails = fails + 1;
+                        mem::swap(&mut fails, &mut new_fails);
                         println!("File upload error: {}", e);
                     })
             )

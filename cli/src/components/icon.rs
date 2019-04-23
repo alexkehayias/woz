@@ -32,7 +32,7 @@ impl<'a> AppComponent for IconComponent<'a> {
                     .context("Failed to read icon to bytes")?;
                 uploads.push(
                     FileUpload::new(
-                        format!("{}/img/icons/homescreen_{}.png", file_prefix, size),
+                        format!("{}/app/img/icons/homescreen_{}.png", file_prefix, size),
                         String::from("image/png"),
                         buffer
                     )
@@ -42,7 +42,7 @@ impl<'a> AppComponent for IconComponent<'a> {
             for (size, bytes) in DEFAULT_ICONS.iter() {
                 uploads.push(
                     FileUpload::new(
-                        format!("{}/img/icons/homescreen_{}.png", file_prefix, size),
+                        format!("{}/app/img/icons/homescreen_{}.png", file_prefix, size),
                         String::from("image/png"),
                         bytes.to_owned()
                     )

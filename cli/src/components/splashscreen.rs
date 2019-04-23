@@ -32,7 +32,7 @@ impl<'a> AppComponent for SplashscreenComponent<'a> {
                     .context("Failed to read splashscreen to bytes")?;
                 uploads.push(
                     FileUpload::new(
-                        format!("{}/img/splashscreens/{}.png", file_prefix, device),
+                        format!("{}/app/img/splashscreens/{}.png", file_prefix, device),
                         String::from("image/png"),
                         buffer
                     )
@@ -42,7 +42,7 @@ impl<'a> AppComponent for SplashscreenComponent<'a> {
             for (device, bytes) in DEFAULT_SPLASHSCREENS.iter() {
                 uploads.push(
                     FileUpload::new(
-                        format!("{}/img/splashscreens/{}.png", file_prefix, device),
+                        format!("{}/app/img/splashscreens/{}.png", file_prefix, device),
                         String::from("image/png"),
                         bytes.to_owned()
                     )
