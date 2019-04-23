@@ -213,7 +213,7 @@ fn run() -> Result<(), Error> {
                     .open(PathBuf::from(format!("{}/Cargo.toml", project_name)))
                     .context("Failed to open Cargo.toml")?;
 
-                cargo_conf.write_all("seed = \"0.2.9\"
+                cargo_conf.write_all("seed = \"0.3.0\"
 wasm-bindgen = \"0.2.40\"
 web-sys = \"0.3.14\"
 
