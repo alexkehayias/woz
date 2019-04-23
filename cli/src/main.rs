@@ -113,7 +113,7 @@ fn run() -> Result<(), Error> {
     let handlebars = load_templates().context("Failed to load templates")?;
 
     let yaml = load_yaml!("cli.yaml");
-    let app = App::from_yaml(yaml);
+    let app = App::from_yaml(yaml).version(&crate_version!()[..]);
     let input = app.get_matches();
 
     // Get the project path either from being passed in as an arg or
