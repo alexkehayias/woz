@@ -3,11 +3,19 @@
 
 # What is Woz?
 
-Woz is a WebAssembly progressive web app (PWA) toolchain for deploying performant mobile apps distributed for free with a hyperlink.
+Woz is a WebAssembly progressive web app (PWA) toolchain for building and deploying performant mobile apps with Rust. Distributed your app is as simple as sharing a hyperlink.
 
 ## Quickstart
 
 Before we begin you must have a recent version of [Rust](https://www.rust-lang.org) installed as well as [wasm-bindgen](https://github.com/rustwasm/wasm-bindgen).
+
+### Install `wasm-bindgen`
+
+Woz uses `wasm-bindgen` to generate the interop calls between WebAssembly and JavaScript. This allows you to write the entire application in Rust—including rendering to the dom.
+
+```
+cargo install -f wasm-bindgen
+```
 
 ### Install Woz
 
@@ -20,10 +28,11 @@ cargo install woz
 ### Setup and deploy
 
 ```sh
-woz setup
 # Follow prompts to create your Woz account
-woz new myapp
-cd myapp
+woz setup
+# Create a new app
+woz new myapp && cd myapp
+# Deploy it for free
 woz deploy
 ```
 
@@ -36,7 +45,7 @@ Coming soon—manage charging for your apps and even provide multiple copies you
 
 ## Examples
 
-* [`seed` framework example](https://woz.sh/us-west-2:f72ab923-2251-4e0d-925e-f3a4408ec70e/seed/index.html)
+The 'Seed' example app uses the `seed` framework and clocks in at ~600kb (including ~300kb for an icon and splashscreen), works offline, and can be installed to your homescreen on iOS or Android devices. You can try it out [here](https://woz.sh/us-west-2:f72ab923-2251-4e0d-925e-f3a4408ec70e/seed/index.html)
 
 ## Open Source
 
