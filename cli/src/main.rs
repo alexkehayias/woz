@@ -214,7 +214,7 @@ fn run() -> Result<(), Error> {
                     .context("Failed to open Cargo.toml")?;
 
                 cargo_conf.write_all("seed = \"0.3.0\"
-wasm-bindgen = \"0.2.40\"
+wasm-bindgen = \"0.2.42\"
 web-sys = \"0.3.14\"
 
 [lib]
@@ -229,6 +229,7 @@ crate-type = [\"cdylib\"]".as_bytes()).unwrap();
                 woz_conf.write_all(format!("name=\"Example: My App\"
 project_id=\"{}\"
 short_name=\"MyApp\"
+bg_color=\"black\"
 lib=\"wasm-bindgen\"
 env=\"production\"
 wasm_path=\"target/wasm32-unknown-unknown/release/{}.wasm\"
