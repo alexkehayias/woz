@@ -14,7 +14,7 @@ Before we begin you must have a recent version of [Rust](https://www.rust-lang.o
 Woz uses `wasm-bindgen` to generate the interop calls between WebAssembly and JavaScript. This allows you to write the entire application in Rust—including rendering to the dom.
 
 ```
-cargo install -f wasm-bindgen
+cargo install -f wasm-bindgen-cli
 ```
 
 ### Install Woz
