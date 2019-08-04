@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use rusoto_core::RusotoFuture;
+use rusoto_core::{RusotoFuture, RusotoError};
 use rusoto_cognito_identity::*;
 use rusoto_cognito_idp::CognitoIdentityProvider;
 use rusoto_cognito_idp::*;
@@ -89,6 +89,10 @@ pub fn setup(id_provider_client: &CognitoIdentityProviderClient,
 
             cache.set("identity", identity_id.as_bytes().to_vec())
                 .expect("Failed to set identity ID in cache");
+        })
+        .map_err(|err| match err {
+            RusotoError::Service(e) => e,
+            _ => panic!("Unknown error")
         })
 }
 

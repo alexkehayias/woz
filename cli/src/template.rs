@@ -31,6 +31,7 @@ fn test_index_templates() {
             "app_js_path": "./app.js",
             "sw_js_path": "./sw.js",
             "wasm_path": "./app.wasm",
+            "bg_color": "#000000",
         }));
     dbg!(res.expect("Failed to render"));
 }

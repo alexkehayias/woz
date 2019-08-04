@@ -5,12 +5,30 @@ use std::path::PathBuf;
 
 use ring::aead::*;
 use ring::rand::*;
-use ring::digest::SHA256;
 use ring::pbkdf2::*;
+use ring::error::Unspecified;
 
 use failure::Error;
 use failure::ResultExt;
 
+
+// TODO replace this with something useful. All it does is wrap a
+// Nonce, but since sealing/opening keys require you implement a
+// NonceSequence this is needed. Maybe generate the Nonce in the `new`
+// method?
+struct OneNonceSequence(Option<Nonce>);
+
+impl OneNonceSequence {
+    fn new(nonce: Nonce) -> Self {
+        Self(Some(nonce))
+    }
+}
+
+impl NonceSequence for OneNonceSequence {
+    fn advance(&mut self) -> Result<Nonce, Unspecified> {
+        self.0.take().ok_or(Unspecified)
+    }
+}
 
 #[derive(Clone)]
 pub struct FileCache {
@@ -26,7 +44,7 @@ impl FileCache {
     pub fn make_key(password: &str, salt: &str) -> [u8; 32] {
         let mut key = [0; 32];
         derive(
-            &SHA256,
+            PBKDF2_HMAC_SHA256,
             std::num::NonZeroU32::new(100).unwrap(),
             salt.as_bytes(),
             &password.as_bytes()[..],
@@ -38,33 +56,35 @@ impl FileCache {
     fn encrypt(&self, content: Vec<u8>) -> Vec<u8> {
         // Ring uses the same input variable as output
         let mut in_out = content.clone();
-        // The input/output variable need some space for a suffix
-        for _ in 0..CHACHA20_POLY1305.tag_len() {
-            in_out.push(0);
-        }
-        // Sealing key used to encrypt data
-        let sealing_key = SealingKey::new(&CHACHA20_POLY1305, &self.key)
-            .expect("failed to make sealing key");
+
         // Fill nonce with random data. Random data must be used only
         // once per encryption
-        let mut nonce_value = vec![0; 12];
+        let mut nonce_value = vec![0; NONCE_LEN];
         SystemRandom::new()
             .fill(&mut nonce_value)
             .expect("Failed to fill random bytes");
         let nonce = Nonce::try_assume_unique_for_key(&nonce_value)
             .expect("Failed to create nonce");
+
+        // Sealing key used to encrypt data
+        let s_key = UnboundKey::new(&CHACHA20_POLY1305, &self.key).unwrap();
+        let mut sealing_key = SealingKey::new(
+            s_key,
+            OneNonceSequence::new(nonce)
+        );
+
         // Additional data that you would like to send and it would
         // not be encrypted but it would be signed
         let additional_data = Aad::empty();
+
         // Encrypt data into in_out variable
-        seal_in_place(
-            &sealing_key,
-            nonce,
+        sealing_key.seal_in_place_append_tag(
             additional_data,
-            &mut in_out,
-            CHACHA20_POLY1305.tag_len()
+            &mut in_out
         ).expect("Failed to seal");
-        // Add in the nonce to the end
+
+        // Add in the nonce to the end so we can extract it later for
+        // decrypting
         for i in nonce_value {
             in_out.push(i);
         }
@@ -72,20 +92,21 @@ impl FileCache {
     }
 
     fn decrypt(&self, nonce: Nonce, content: Vec<u8>) -> Vec<u8> {
-        // Ring uses the same input variable as output
         let mut in_out = content.clone();
-        // Sealing key used to encrypt data
-        let opening_key = OpeningKey::new(&CHACHA20_POLY1305, &self.key)
-            .expect("Failed to init encryption key");
+        // Opening key used to decrypt data
+        let o_key = UnboundKey::new(&CHACHA20_POLY1305, &self.key)
+            .expect("Failed to init decryption key");;
+        let mut opening_key = OpeningKey::new(
+            o_key,
+            OneNonceSequence::new(nonce)
+        );
+
         // Additional data that you would like to send and it would
         // not be encrypted but it would be signed
         let additional_data = Aad::empty();
         // Encrypt data into in_out variable
-        open_in_place(
-            &opening_key,
-            nonce,
+        opening_key.open_in_place(
             additional_data,
-            0,
             &mut in_out
         ).expect("Failed to decrypt");
         // Remove the extra padding from suffix
@@ -148,6 +169,7 @@ impl FileCache {
 mod cache_tests {
     use super::*;
     use std::env;
+
 
     fn make_key() -> [u8; 32] {
         FileCache::make_key("test password", "test salt")
