@@ -17,6 +17,13 @@ Woz uses `wasm-bindgen` to generate the interop calls between WebAssembly and Ja
 cargo install -f wasm-bindgen-cli
 ```
 
+### Install wasm compiler target
+
+```
+rustup target add wasm32-unknown-unknown
+```
+
+
 ### Install Woz
 
 Using `cargo`:
@@ -36,12 +43,54 @@ woz new myapp && cd myapp
 woz deploy
 ```
 
-## Early Access—Free
+## Hosting
 
-You can join for free and deploy an unlimited number of WebAssembly progressive web apps to your workspace. We currently support Rust generated WebAssembly binaries via the `wasm32-unknown-unkown` target that are `wasm-bindgen` compatible.
+### Woz.sh Early Access—Free
+
+The easiest way to deploy, you can join woz.sh for free and with an unlimited number of WebAssembly progressive web apps to your workspace. We currently support Rust generated WebAssembly binaries via the `wasm32-unknown-unkown` target that are `wasm-bindgen` compatible.
 
 Coming soon—manage charging for your apps and even provide multiple copies your users can share all with a hyperlink.
 
+### Self-hosting
+
+Put the following environment variables in a file:
+
+```
+# Scheme to use when constructing URLs to your app
+WOZ_WEB_SCHEME="https"
+# Domain to use links to your app
+WOZ_WEB_NETLOC="example.com"
+# Cognito identity pool to use for user registration
+WOZ_USER_POOL_URL="cognito-idp.<REGION>.amazonaws.com/<USER POOL ID>"
+# Cognito identity pool to use for authentication
+WOZ_IDENTITY_POOL_ID="<REGION>:<IDENTITY POOL ID>"
+# Cognito user pool app client to use for use with the CLI
+WOZ_CLIENT_ID="<USER POOL APP CLIENT ID>"
+# S3 bucket where static files will be stored
+WOZ_S3_BUCKET_NAME="<S3 BUCKET NAME>"
+# Password used for encrypting tokens on disk
+WOZ_ENCRYPTION_PASSWORD="<STRONG PASSWORD>"
+# Salt used for encrypting tokens on disk
+WOZ_ENCRYPTION_SALT="<RANDOM SALT>"
+# Location of the woz repo, needed to generate new projects
+WOZ_PROJECT_ROOT="<PATH TO WOZ REPO>"
+# Location of the woz repo, needed to include assets
+WOZ_CLI_PROJECT_ROOT="<PATH TO WOZ REPO>/cli"
+```
+
+In your terminal, add the environment variables to the session:
+
+```
+set -a; . ../my-env; set +a
+```
+
+You can now build and deploy to your own AWS account. For example:
+
+```
+cargo run setup
+cargo run new myapp
+cargo run deploy --project-root ./myapp
+```
 
 ## Examples
 

@@ -50,7 +50,7 @@ pub fn refresh_auth(client: &CognitoIdentityProviderClient, refresh_token: &str)
 pub fn identity_id(client: &CognitoIdentityClient, id_token: &str)
                    -> RusotoFuture<GetIdResponse, GetIdError> {
     let mut logins = HashMap::new();
-    logins.insert(IDENTITY_POOL_URL.to_string(), id_token.to_owned());
+     logins.insert(USER_POOL_URL.to_string(), id_token.to_owned());
 
     let mut req = GetIdInput::default();
     req.identity_pool_id = IDENTITY_POOL_ID.to_string();
@@ -76,7 +76,7 @@ pub fn setup(id_provider_client: &CognitoIdentityProviderClient,
                 .expect("No access token found");
 
             cache.set_encrypted("refresh_token", refresh_token.as_bytes().to_vec())
-                .expect("Failed to set identity ID in cache");
+                .expect("Failed to set refresh token in cache");
 
             // Store the identity ID
             let id_token = auth_result.id_token
@@ -101,7 +101,7 @@ type AWSCredentialsResponse = RusotoFuture<GetCredentialsForIdentityResponse,
 pub fn aws_credentials(client: &CognitoIdentityClient, identity_id: &str, id_token: &str)
                        ->  AWSCredentialsResponse {
     let mut logins = HashMap::new();
-    logins.insert(IDENTITY_POOL_URL.to_string(), id_token.to_owned());
+    logins.insert(USER_POOL_URL.to_string(), id_token.to_owned());
 
     let mut req = GetCredentialsForIdentityInput::default();
     req.identity_id = identity_id.to_owned();

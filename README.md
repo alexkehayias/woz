@@ -17,11 +17,7 @@ woz new myapp && cd ./myapp
 woz deploy
 ```
 
-## Early Access—Free
-
-You can join for free and deploy an unlimited number of WebAssembly progressive web apps to your workspace. We currently support Rust generated WebAssembly binaries via the `wasm32-unknown-unkown` target that are `wasm-bindgen` compatible.
-
-Coming soon—manage charging for your apps and even provide multiple copies your users can share all with a hyperlink.
+Woz can also be self-hosted. See https://woz.sh for the latest docs.
 
 ## License
 

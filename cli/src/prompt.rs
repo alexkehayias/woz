@@ -15,13 +15,15 @@ fn username_password() -> (String, String) {
 
     stdout.write_all(b"Password: ").unwrap();
     stdout.flush().expect("Error");
-    let password = stdin.read_passwd(&mut stdout)
-        .expect("No password")
-        .unwrap();
-    // For some reason read_passwd doesn't add a newline
-    println!();
+    let password_input = stdin.read_passwd(&mut stdout);
 
-    (username, password)
+    if let Ok(Some(password)) = password_input {
+        stdout.write_all(b"\n").unwrap();
+        (username, password)
+    } else {
+        stdout.write_all(b"Error\n").unwrap();
+        panic!("Failed to get password");
+    }
 }
 
 fn email() -> String {

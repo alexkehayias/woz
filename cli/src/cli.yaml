@@ -24,8 +24,10 @@ args:
       takes_value: true
 
 subcommands:
+  - signup:
+      about: Sign up for a woz.sh account
   - setup:
-      about: Setup a woz.sh account and authentication
+      about: Authenticate and set up tokens
   - init:
       about: Initialize a woz in the current project directory
   - new:

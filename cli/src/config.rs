@@ -6,8 +6,8 @@ use failure::Error;
 
 pub const SCHEME: &str = env!("WOZ_WEB_SCHEME");
 pub const NETLOC: &str = env!("WOZ_WEB_NETLOC");
+pub const USER_POOL_URL: &str = env!("WOZ_USER_POOL_URL");
 pub const IDENTITY_POOL_ID: &str = env!("WOZ_IDENTITY_POOL_ID");
-pub const IDENTITY_POOL_URL: &str = env!("WOZ_IDENTITY_POOL_URL");
 pub const CLIENT_ID: &str = env!("WOZ_CLIENT_ID");
 pub const S3_BUCKET_NAME: &str = env!("WOZ_S3_BUCKET_NAME");
 

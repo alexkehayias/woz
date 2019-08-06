@@ -48,24 +48,26 @@ use components::landing_page::LandingPageComponent;
 
 
 enum Command {
+    Build,
+    Deploy,
     Init,
     NewProject,
     Setup,
-    Deploy,
+    Signup,
     Update,
-    Build,
     Unknown,
 }
 
 impl From<&str> for Command {
     fn from(s: &str) -> Command {
         match s {
+            "build" => Command::Build,
+            "deploy" => Command::Deploy,
             "init" => Command::Init,
             "new" => Command::NewProject,
             "setup" => Command::Setup,
-            "deploy" => Command::Deploy,
+            "signup" => Command::Signup,
             "update" => Command::Update,
-            "build" => Command::Build,
             _ => Command::Unknown
         }
     }
@@ -146,7 +148,7 @@ fn run() -> Result<(), Error> {
             // 2. A verified email address
             // 3. A unique user ID
             // 4. A refresh token
-            Command::Setup => {
+            Command::Signup => {
                 fs::create_dir_all(&home_path).context("Failed to make home directory")?;
                 // TODO first check if there is an existing installation
                 let values = prompt::signup();
@@ -191,6 +193,18 @@ fn run() -> Result<(), Error> {
                 };
 
                 println!("Your account has been successfully set up! You can now deploy to your applications using 'woz deploy'");
+            },
+            Command::Setup => {
+                let values = prompt::login();
+                let id_provider_client = CognitoIdentityProviderClient::new(Region::UsWest2);
+                let id_client = CognitoIdentityClient::new(Region::UsWest2);
+
+                account::setup(&id_provider_client,
+                               &id_client,
+                               &cache,
+                               values.username.clone(),
+                               values.password.clone())
+                    .expect("Unable to login and perform local set up");
             },
             Command::NewProject => {
                 // This unwrap is safe because the cli preparses and
