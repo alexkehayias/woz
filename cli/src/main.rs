@@ -17,6 +17,7 @@ use clap::App;
 #[macro_use] extern crate serde_derive;
 #[macro_use] extern crate serde_json;
 #[macro_use] extern crate failure;
+extern crate regex;
 extern crate tokio;
 
 use failure::Error;

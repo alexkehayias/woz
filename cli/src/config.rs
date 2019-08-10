@@ -2,6 +2,7 @@ use std::collections::HashMap;
 use std::path::PathBuf;
 use serde::{Deserialize, Deserializer};
 use failure::Error;
+use regex::Regex;
 
 
 pub const SCHEME: &str = env!("WOZ_WEB_SCHEME");
@@ -125,6 +126,10 @@ impl<'de> Deserialize<'de> for Environment {
     }
 }
 
+lazy_static! {
+    static ref PROJECT_ID_REGEX: Regex = Regex::new(r"^[a-zA-Z0-9-_]+$").unwrap();
+}
+
 #[derive(Debug, Serialize, Clone)]
 pub struct ProjectId(pub String);
 impl Default for ProjectId {
@@ -133,12 +138,18 @@ impl Default for ProjectId {
     }
 }
 
+impl ProjectId {
+    fn is_valid(id: &String) -> bool {
+        PROJECT_ID_REGEX.is_match(id)
+    }
+}
+
 impl<'de> Deserialize<'de> for ProjectId {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
         where D: Deserializer<'de>
     {
         let s = String::deserialize(deserializer)?;
-        if s.chars().all(char::is_alphanumeric) {
+        if ProjectId::is_valid(&s) {
             Ok(ProjectId(s))
         } else {
             Err(serde::de::Error::custom(String::from("must be alphanumeric")))
@@ -270,4 +281,18 @@ wasm_path=\"target/wasm32-unknown-unknown/release/seed_app.wasm\"\
 ";
     let conf: Config = toml::from_str(&conf_str).unwrap();
     assert!(conf.description.is_some());
+}
+
+#[test]
+fn project_id_test() {
+    use super::*;
+    let valid1 = String::from("test_123");
+    let valid2 = String::from("testing");
+    let invalid1 = String::from("test*(#&$");
+    let invalid2 = String::from("test ing");
+
+    assert_eq!(ProjectId::is_valid(&valid1), true);
+    assert_eq!(ProjectId::is_valid(&valid2), true);
+    assert_eq!(ProjectId::is_valid(&invalid1), false);
+    assert_eq!(ProjectId::is_valid(&invalid2), false);
 }
