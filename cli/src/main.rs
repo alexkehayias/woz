@@ -227,9 +227,9 @@ fn run() -> Result<(), Error> {
                     .open(PathBuf::from(format!("{}/Cargo.toml", project_name)))
                     .context("Failed to open Cargo.toml")?;
 
-                cargo_conf.write_all("seed = \"0.3.0\"
-wasm-bindgen = \"0.2.42\"
-web-sys = \"0.3.14\"
+                cargo_conf.write_all("seed = \"0.4.0\"
+wasm-bindgen = \"0.2.48\"
+web-sys = \"0.3.25\"
 
 [lib]
 crate-type = [\"cdylib\"]".as_bytes()).unwrap();

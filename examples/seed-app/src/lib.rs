@@ -12,11 +12,14 @@ impl Default for Model {
 #[derive(Clone)]
 enum Msg {}
 
-fn update(msg: Msg, model: &mut Model) -> Update<Msg> {
-    Render.into()
+fn update(_msg: Msg, _model: &mut Model, _orders: &mut impl Orders<Msg>) {
+    // This would be where you update state. In this example there is
+    // no stateful interactivity so this is a noop
+    ()
 }
 
-fn view(model: &Model) -> El<Msg> {
+
+fn view(_model: &Model) -> impl View<Msg> {
     let font_family = "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, Helvetica, Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\"";
 
     let outer_style = style!{
@@ -100,7 +103,7 @@ fn view(model: &Model) -> El<Msg> {
 
 #[wasm_bindgen]
 pub fn render() {
-    seed::App::build(Model::default(), update, view)
+    seed::App::build(|_, _| Model::default(), update, view)
         .finish()
         .run();
 }

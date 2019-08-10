@@ -8,6 +8,6 @@ edition = "2018"
 crate-type = ["cdylib"]
 
 [dependencies]
-seed = "0.3.0"
-wasm-bindgen = "0.2.42"
-web-sys = "0.3.14"
+seed = "0.4.0"
+wasm-bindgen = "0.2.48"
+web-sys = "0.3.25"
