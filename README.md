@@ -12,7 +12,7 @@ You can create a free account, generate the sample app, and deploy by running th
 
 ```sh
 cargo install woz
-woz setup
+woz signup
 woz new myapp && cd ./myapp
 woz deploy
 ```

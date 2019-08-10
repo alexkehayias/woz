@@ -36,7 +36,7 @@ cargo install woz
 
 ```sh
 # Follow prompts to create your Woz account
-woz setup
+woz signup
 # Create a new app
 woz new myapp && cd myapp
 # Deploy it for free
