@@ -74,7 +74,7 @@ impl From<&str> for Command {
     }
 }
 
-fn git_hash() -> Result<String, Error> {
+pub fn git_hash() -> Result<String, Error> {
     let proc = process::Command::new("sh")
         .arg("-c")
         .arg("git rev-parse --verify HEAD --short")
