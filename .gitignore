@@ -3,7 +3,7 @@ env-qa
 env-prod
 notes.org
 cli/target/
-examples/*/target
+cli/examples/*/target
 .DS_Store
 site/public/
 site/static/install/*

@@ -1,0 +1,98 @@
+# Based on the "trust" template v0.1.2
+# https://github.com/japaric/trust/tree/v0.1.2
+
+dist: xenial
+language: rust
+services: docker
+sudo: required
+
+env:
+  global:
+    - CRATE_NAME=woz
+
+matrix:
+  include:
+    # Linux
+    # This target currently fails because the docker image used can't
+    # compile `ring`. Needs to be updated to Xenial, but there hasn't
+    # been a new image released in 2 years...
+    # - env: TARGET=x86_64-unknown-linux-gnu
+    - env: TARGET=x86_64-unknown-linux-musl
+
+    # OSX
+    # Currently `ring` is incompatible with 32 bit OSX
+    # - env: TARGET=i686-apple-darwin
+    #   os: osx
+    - env: TARGET=x86_64-apple-darwin
+      os: osx
+
+    # *BSD
+    - env: TARGET=i686-unknown-freebsd DISABLE_TESTS=1
+    - env: TARGET=x86_64-unknown-freebsd DISABLE_TESTS=1
+    - env: TARGET=x86_64-unknown-netbsd DISABLE_TESTS=1
+
+    # Windows
+    # Fails due to `termion` v1.5.1 compilation error:
+    # pub use sys::size::terminal_size;
+    # ^^^ maybe a missing `extern crate sys;`? issue
+    # - env: TARGET=x86_64-pc-windows-gnu
+
+before_install:
+  # Workaround for travis-ci #4704 build fails with no error
+  - rustup self update
+
+install:
+  - sh cli/ci/install.sh
+  - source ~/.cargo/env || true
+
+after_install:
+  - sleep 1
+
+script:
+  - cd cli
+  - sh ci/script.sh
+
+after_script:
+  - sleep 1
+
+before_deploy:
+  - cd cli
+  - sh ci/before_deploy.sh
+
+# Sometimes travis cuts off error logs...
+after_failure:
+  - sleep 1
+
+deploy:
+  # To update `api_key.secure`
+  # - Create a `public_repo` GitHub token. Go to: https://github.com/settings/tokens/new
+  # - Encrypt it: `travis encrypt 0123456789012345678901234567890123456789
+  # - Paste the output down here
+  api_key:
+    secure: hAI5hMNaltmEnw/9N7olCpCij8MjRUYy578VlFTK2qNMlKP++8SzsH3wkVlGEnyDZe4uIQgDePJUSEmoOjnnuU4JIEHr8D4A0ZPF+igTSXdPmH+xk1Mn0GoBD94eWQ1Ju1yGJOsNGiuBGNWQrv3WH0hHVsNFy99ItY/vL6OETj/8KsZscrSI8PT/+YBnS9GqGqGPsCDZkBhWIv1GbQuUZifLiAepYOKx/Yqg2hTETJbuGWd9DD+8IqcOyXbwFiFPXAK0zsLH2uttz946n3G+4m0RbIV5OAg0Um9PNSyoFfV+FkAzky1ujNOz5DcPWf6H++FU3Q25iQJOukEJuN98ABAv4tkXVg+xN7ASJ4gnZHojxYf0BoxMspWKuYQtqyelGglB6sGi1Mm3lIDvzjGi8D/eoXAMR7JwRKVw7kUK3Hch/ZlFT+MVo54dtMNjRa1tLGXFO0REGn0WSsx8RirS1RN7VQx1CtPybWPL3it22cGSJ1SLwXTuu8HZi9sg0JbWg74wY0exJcJghYsr9jEga7UUwDoVutfTtE7Y6XwmUJhP7PICxRmo78AGVL7s4zmJO37R+rYLoLef68n1to+4g+Af5IeXh/GrQ335+cCDs4kSUEUqvbXRq7mFaw1kSbl7ec1E2yL3avl75jVl5i3GFKv4DJWc4V7bS169HZjS9js=
+  file_glob: true
+  file: $CRATE_NAME-$TRAVIS_TAG-$TARGET.*
+  on:
+    # Here you can pick which targets will generate binary releases
+    # In this example, there are some targets that are tested using the stable
+    # and nightly channels. This condition makes sure there is only one release
+    # for such targets and that's generated using the stable channel
+    condition: $TRAVIS_RUST_VERSION = stable
+    tags: true
+  provider: releases
+  skip_cleanup: true
+
+cache: cargo
+before_cache:
+  # Travis can't cache files that are not readable by "others"
+  - chmod -R a+r $HOME/.cargo
+
+branches:
+  only:
+    # release tags
+    - /^v\d+\.\d+\.\d+.*$/
+    - master
+
+notifications:
+  email:
+    on_success: never

@@ -17,9 +17,9 @@ pub const MAX_APP_SIZE_MB: usize = 20;
 pub const ENCRYPTION_PASSWORD: &str = env!("WOZ_ENCRYPTION_PASSWORD");
 pub const ENCRYPTION_SALT: &str = env!("WOZ_ENCRYPTION_SALT");
 
-pub static DEFAULT_PROJECT_LIB_RS: &str = include_str!(concat!(env!("WOZ_PROJECT_ROOT"), "/examples/seed-app/src/lib.rs"));
+pub static DEFAULT_PROJECT_LIB_RS: &str = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/examples/seed-app/src/lib.rs"));
 
-pub static LANDING_PAGE_CSS: &str = include_str!(concat!(env!("WOZ_CLI_PROJECT_ROOT"), "/resources/styles/landing_page.css"));
+pub static LANDING_PAGE_CSS: &str = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/resources/styles/landing_page.css"));
 
 // Default icons are included in the bin. This will make it bigger so
 // maybe in the future these should be downloaded to the user's local
@@ -28,18 +28,18 @@ pub static LANDING_PAGE_CSS: &str = include_str!(concat!(env!("WOZ_CLI_PROJECT_R
 // Making these all static even though they will only be accessed via
 // DEFAULT_ICONS so that it's a compile error if the default icon
 // files don't exist.
-static DEFAULT_ICON_48X48: &'static [u8; 831] = include_bytes!(concat!(env!("WOZ_CLI_PROJECT_ROOT"), "/resources/icons/48x48.png"));
-static DEFAULT_ICON_72X72: &'static [u8; 1196] = include_bytes!(concat!(env!("WOZ_CLI_PROJECT_ROOT"), "/resources/icons/72x72.png"));
-static DEFAULT_ICON_96X96: &'static [u8; 1538] = include_bytes!(concat!(env!("WOZ_CLI_PROJECT_ROOT"), "/resources/icons/96x96.png"));
-static DEFAULT_ICON_144X144: &'static [u8; 2217] = include_bytes!(concat!(env!("WOZ_CLI_PROJECT_ROOT"), "/resources/icons/144x144.png"));
-static DEFAULT_ICON_168X168: &'static [u8; 2566] = include_bytes!(concat!(env!("WOZ_CLI_PROJECT_ROOT"), "/resources/icons/168x168.png"));
-static DEFAULT_ICON_192X192: &'static [u8; 2870] = include_bytes!(concat!(env!("WOZ_CLI_PROJECT_ROOT"), "/resources/icons/192x192.png"));
-static DEFAULT_ICON_512X512: &'static [u8; 8042] = include_bytes!(concat!(env!("WOZ_CLI_PROJECT_ROOT"), "/resources/icons/512x512.png"));
+static DEFAULT_ICON_48X48: &'static [u8; 831] = include_bytes!(concat!(env!("CARGO_MANIFEST_DIR"), "/resources/icons/48x48.png"));
+static DEFAULT_ICON_72X72: &'static [u8; 1196] = include_bytes!(concat!(env!("CARGO_MANIFEST_DIR"), "/resources/icons/72x72.png"));
+static DEFAULT_ICON_96X96: &'static [u8; 1538] = include_bytes!(concat!(env!("CARGO_MANIFEST_DIR"), "/resources/icons/96x96.png"));
+static DEFAULT_ICON_144X144: &'static [u8; 2217] = include_bytes!(concat!(env!("CARGO_MANIFEST_DIR"), "/resources/icons/144x144.png"));
+static DEFAULT_ICON_168X168: &'static [u8; 2566] = include_bytes!(concat!(env!("CARGO_MANIFEST_DIR"), "/resources/icons/168x168.png"));
+static DEFAULT_ICON_192X192: &'static [u8; 2870] = include_bytes!(concat!(env!("CARGO_MANIFEST_DIR"), "/resources/icons/192x192.png"));
+static DEFAULT_ICON_512X512: &'static [u8; 8042] = include_bytes!(concat!(env!("CARGO_MANIFEST_DIR"), "/resources/icons/512x512.png"));
 
 // iOS icon sizes
-static DEFAULT_ICON_152X152: &'static [u8; 2321] = include_bytes!(concat!(env!("WOZ_CLI_PROJECT_ROOT"), "/resources/icons/152x152.png"));
-static DEFAULT_ICON_167X167: &'static [u8; 2489] = include_bytes!(concat!(env!("WOZ_CLI_PROJECT_ROOT"), "/resources/icons/167x167.png"));
-static DEFAULT_ICON_180X180: &'static [u8; 2717] = include_bytes!(concat!(env!("WOZ_CLI_PROJECT_ROOT"), "/resources/icons/180x180.png"));
+static DEFAULT_ICON_152X152: &'static [u8; 2321] = include_bytes!(concat!(env!("CARGO_MANIFEST_DIR"), "/resources/icons/152x152.png"));
+static DEFAULT_ICON_167X167: &'static [u8; 2489] = include_bytes!(concat!(env!("CARGO_MANIFEST_DIR"), "/resources/icons/167x167.png"));
+static DEFAULT_ICON_180X180: &'static [u8; 2717] = include_bytes!(concat!(env!("CARGO_MANIFEST_DIR"), "/resources/icons/180x180.png"));
 
 lazy_static!{
     pub static ref DEFAULT_ICONS: HashMap<&'static str, Vec<u8>> = {
@@ -258,8 +258,8 @@ pub fn default_home_path() -> Result<PathBuf, Error> {
     Ok(buf)
 }
 
+#[cfg(all(target_os="macos"))]
 #[test]
-// TODO only compile on macOS
 fn default_home_path_test() {
     let user = std::env::var_os("USER")
         .map(|v| v.into_string().expect("Could not parse $USER to string"))

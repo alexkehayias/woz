@@ -74,32 +74,6 @@ impl From<&str> for Command {
     }
 }
 
-pub fn git_hash() -> Result<String, Error> {
-    let proc = process::Command::new("sh")
-        .arg("-c")
-        .arg("git rev-parse --verify HEAD --short")
-        .stdout(process::Stdio::piped())
-        .spawn()
-        .context("Failed to spawn git process")?;
-
-    let output = proc.wait_with_output().context("Failed to wait for git")?;
-    if !output.status.success() {
-        return Err(format_err!("git failed"))
-    };
-
-    let hash = std::str::from_utf8(&output.stdout)
-        .context("Failed to parse git output to string")?
-        .trim_end();
-
-    Ok(hash.to_string())
-}
-
-#[test]
-fn git_hash_works() {
-    assert!(git_hash().is_ok());
-    assert_eq!(7, git_hash().unwrap().len());
-}
-
 fn random_version() -> String {
     thread_rng()
         .sample_iter(&Alphanumeric)
