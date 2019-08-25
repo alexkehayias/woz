@@ -1,6 +1,8 @@
+[![Build Status](https://travis-ci.org/alexkehayias/woz.svg?branch=master)](https://travis-ci.org/alexkehayias/woz)
+
 # What is Woz?
 
-[Woz](https://woz.sh) is a WebAssembly progressive web app (PWA) toolchain for building and deploying performant mobile apps with Rust. Distributed your app is as simple as sharing a hyperlink.
+[Woz](https://woz.sh) is a progressive WebAssembly app generator (PWAA) for Rust.
 
 ## Docs
 
@@ -8,10 +10,15 @@ See https://woz.sh for the latest docs.
 
 ### Quick Start
 
-You can create a free account, generate the sample app, and deploy by running the following in your terminal:
+Install a pre-built binary (macOS, linux, bsd only):
 
 ```sh
-cargo install woz
+curl -LSfs https://woz.sh/bin/install.sh | sh -s
+```
+
+Setup a free account and deploy the sample app:
+
+```sh
 woz signup
 woz new myapp && cd ./myapp
 woz deploy

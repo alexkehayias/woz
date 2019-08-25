@@ -26,20 +26,20 @@ rustup target add wasm32-unknown-unknown
 
 ### Install Woz
 
-Using `cargo`:
+Using a pre-built binary (macOS, linux, bsd only):
 
 ```sh
-cargo install woz
+curl -LSfs https://woz.sh/bin/install.sh | sh -s
 ```
 
 ### Setup and deploy
 
 ```sh
-# Follow prompts to create your Woz account
+# Follow prompts to create your free Woz account
 woz signup
 # Create a new app
 woz new myapp && cd myapp
-# Deploy it for free
+# Deploy it
 woz deploy
 ```
 
@@ -58,22 +58,31 @@ Put the following environment variables in a file:
 ```
 # Scheme to use when constructing URLs to your app
 WOZ_WEB_SCHEME="https"
+
 # Domain to use links to your app
 WOZ_WEB_NETLOC="example.com"
+
 # Cognito identity pool to use for user registration
 WOZ_USER_POOL_URL="cognito-idp.<REGION>.amazonaws.com/<USER POOL ID>"
+
 # Cognito identity pool to use for authentication
 WOZ_IDENTITY_POOL_ID="<REGION>:<IDENTITY POOL ID>"
+
 # Cognito user pool app client to use for use with the CLI
 WOZ_CLIENT_ID="<USER POOL APP CLIENT ID>"
+
 # S3 bucket where static files will be stored
 WOZ_S3_BUCKET_NAME="<S3 BUCKET NAME>"
+
 # Password used for encrypting tokens on disk
 WOZ_ENCRYPTION_PASSWORD="<STRONG PASSWORD>"
+
 # Salt used for encrypting tokens on disk
 WOZ_ENCRYPTION_SALT="<RANDOM SALT>"
+
 # Location of the woz repo, needed to generate new projects
 WOZ_PROJECT_ROOT="<PATH TO WOZ REPO>"
+
 # Location of the woz repo, needed to include assets
 WOZ_CLI_PROJECT_ROOT="<PATH TO WOZ REPO>/cli"
 ```
