@@ -19,7 +19,7 @@ main() {
 
     # Build the artifacts that matter to you
     cross rustc --target $TARGET --release -- -C lto
-    cp target/$TARGET/release/cli $stage/
+    cp target/$TARGET/release/woz $stage/
 
     cd $stage
     tar czf $src/$CRATE_NAME-$TRAVIS_TAG-$TARGET.tar.gz *

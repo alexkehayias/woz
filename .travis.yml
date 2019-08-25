@@ -56,7 +56,6 @@ after_script:
   - sleep 1
 
 before_deploy:
-  - cd cli
   - sh ci/before_deploy.sh
 
 # Sometimes travis cuts off error logs...
