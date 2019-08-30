@@ -24,7 +24,7 @@ use crate::config::Environment;
 /// AppComponent trait and adding it to the build via
 /// the `component` method.
 pub struct AppBuilder<'a> {
-    components: Vec<&'a AppComponent>,
+    components: Vec<&'a dyn AppComponent>,
     files: Vec<FileUpload>,
 }
 
