@@ -273,14 +273,10 @@ wasm_path=\"target/wasm32-unknown-unknown/release/{}.wasm\"
                 let mut wasm_path = project_path.clone();
                 wasm_path.push(conf.wasm_path.clone());
 
-                let identity_id = cache.get("identity")
-                    .context("Missing identity ID in cache")?;
-
                 let url = format!(
-                    "{}://{}/{}/{}/index.html",
+                    "{}://{}/{}/index.html",
                     SCHEME,
                     NETLOC,
-                    identity_id,
                     project_id
                 );
 

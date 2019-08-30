@@ -62,17 +62,42 @@ woz new myapp && cd myapp
 woz deploy
 ```
 
+## Examples
+
+The 'Seed' example app uses the `seed` framework and clocks in at ~600kb (including ~300kb for an icon and splashscreen), works offline, and can be installed to your homescreen on iOS or Android devices. You can try it out [here](https://woz.sh/us-west-2:f72ab923-2251-4e0d-925e-f3a4408ec70e/seed/index.html)
+
 ## Hosting
 
 ### Woz.sh Early Access—Free
 
-The easiest way to deploy, you can join woz.sh for free and with an unlimited number of WebAssembly progressive web apps to your workspace. We currently support Rust generated WebAssembly binaries via the `wasm32-unknown-unkown` target that are `wasm-bindgen` compatible.
-
-Coming soon—manage charging for your apps and even provide multiple copies your users can share all with a hyperlink.
+Due to the security requirements of PWAs and WebAssembly, the easiest way to deploy is to create a free woz.sh account. To create an account use `woz signup` and follow the prompts. If you already have an account use `woz setup` to set up your local computer with credentials. Then use `woz deploy` to deploy your app.
 
 ### Self-hosting
 
-Put the following environment variables in a file:
+You can self-host by using `woz` to build your app locally and upload the files to your static file hosting service such as AWS S3.
+
+Build the app locally:
+
+```
+cd myapp/
+woz build
+```
+
+Follow the cli output to get the location of the generated app files on disk. It will look something like:
+
+```
+App package directory can be found at /Users/myusername/.woz/myapp/pkg
+```
+
+The `app` directory contains an `index.html` file that will be the entry point for running the app in a browser.
+
+Note: the security requirements for PWAs and WebAssembly means you will need to serve the files over https. Browsing the files directly in the browser (e.g. `file://`) will result in security-related errors. Use a static file server and install an SSL certificate to be able to install the app to your home screen.
+
+### Multi-user AWS hosting
+
+You can compile `woz` so that it uses your AWS account and allow for multiple users to securely deploy apps to a shared S3 bucket.
+
+To do that, clone the Woz repo locally and put the following environment variables in a file:
 
 ```
 # Scheme to use when constructing URLs to your app
@@ -119,10 +144,6 @@ cargo run setup
 cargo run new myapp
 cargo run deploy --project-root ./myapp
 ```
-
-## Examples
-
-The 'Seed' example app uses the `seed` framework and clocks in at ~600kb (including ~300kb for an icon and splashscreen), works offline, and can be installed to your homescreen on iOS or Android devices. You can try it out [here](https://woz.sh/us-west-2:f72ab923-2251-4e0d-925e-f3a4408ec70e/seed/index.html)
 
 ## Open Source
 
