@@ -218,10 +218,16 @@ crate-type = [\"cdylib\"]".as_bytes()).unwrap();
                 woz_conf.write_all(format!("name=\"Example: My App\"
 project_id=\"{}\"
 short_name=\"MyApp\"
+# Optional project url that will be used in html meta tags
+# project_url=\"https://example.com\"
 bg_color=\"black\"
 lib=\"wasm-bindgen\"
+# For production deploys
 env=\"production\"
 wasm_path=\"target/wasm32-unknown-unknown/release/{}.wasm\"
+# Uncomment these values for faster to compile development builds
+# env=\"development\"
+# wasm_path=\"target/wasm32-unknown-unknown/debug/seed_app.wasm\"
 ", project_name, project_name).as_bytes()).unwrap();
 
                 // Write a hello world lib.rs
@@ -247,8 +253,16 @@ wasm_path=\"target/wasm32-unknown-unknown/release/{}.wasm\"
                 woz_conf.write_all(format!("name=\"{}\"
 project_id=\"{}\"
 short_name=\"{}\"
+# Optional project url that will be used in html meta tags
+# project_url=\"https://example.com\"
+bg_color=\"black\"
 lib=\"wasm-bindgen\"
+# For production deploys
+env=\"production\"
 wasm_path=\"target/wasm32-unknown-unknown/release/{}.wasm\"
+# Uncomment these values for faster to compile development builds
+# env=\"development\"
+# wasm_path=\"target/wasm32-unknown-unknown/debug/seed_app.wasm\"
 ", project_name, project_name, project_name, project_name).as_bytes()).unwrap();
 
                 println!("Ready to be deployed with 'woz deploy'");
@@ -273,12 +287,12 @@ wasm_path=\"target/wasm32-unknown-unknown/release/{}.wasm\"
                 let mut wasm_path = project_path.clone();
                 wasm_path.push(conf.wasm_path.clone());
 
-                let url = format!(
+                let url = conf.project_url.clone().unwrap_or(format!(
                     "{}://{}/{}/index.html",
                     SCHEME,
                     NETLOC,
                     project_id
-                );
+                ));
 
                 // Build the app with all the components
                 let landing_page_cmpnt = LandingPageComponent::new(
@@ -341,13 +355,13 @@ wasm_path=\"target/wasm32-unknown-unknown/release/{}.wasm\"
                 let mut wasm_path = project_path.clone();
                 wasm_path.push(conf.wasm_path.clone());
 
-                let url = format!(
+                let url = conf.project_url.clone().unwrap_or(format!(
                     "{}://{}/{}/{}/index.html",
                     SCHEME,
                     NETLOC,
                     identity_id,
                     project_id
-                );
+                ));
 
                 // Build the app with all the components
                 let landing_page_cmpnt = LandingPageComponent::new(
