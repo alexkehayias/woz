@@ -3,7 +3,7 @@
 
 # What is Woz?
 
-Woz is a WebAssembly progressive web app (PWA) toolchain for building and deploying performant mobile apps with Rust. Distributed your app is as simple as sharing a hyperlink.
+Woz is a is a progressive WebAssembly app (PWAA) generator for Rust. Apps can be installed to your home screen and shared with a hyperlink.
 
 ## Quickstart
 
@@ -48,6 +48,14 @@ curl -LSfs https://woz.sh/bin/install.sh | sh -s -- --target x86_64-unknown-free
 
 ```sh
 curl -LSfs https://woz.sh/bin/install.sh | sh -s -- --target x86_64-unknown-netbsd
+```
+
+#### Updating
+
+To update to the latest version of `woz` run the following command.
+
+```sh
+curl -LSfs https://woz.sh/bin/install.sh | sh -s -- -f --target <NAME OF TARGET>
 ```
 
 

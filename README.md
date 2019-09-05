@@ -2,7 +2,7 @@
 
 # What is Woz?
 
-[Woz](https://woz.sh) is a progressive WebAssembly app generator (PWAA) for Rust.
+[Woz](https://woz.sh) is a progressive WebAssembly app (PWAA) generator for Rust.
 
 ## Docs
 
@@ -53,6 +53,13 @@ curl -LSfs https://woz.sh/bin/install.sh | sh -s -- --target x86_64-unknown-free
 curl -LSfs https://woz.sh/bin/install.sh | sh -s -- --target x86_64-unknown-netbsd
 ```
 
+#### Updating
+
+To update to the latest version of `woz` run the following command.
+
+```sh
+curl -LSfs https://woz.sh/bin/install.sh | sh -s -- -f --target <NAME OF TARGET>
+```
 
 ### Setup and deploy
 
