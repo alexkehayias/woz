@@ -6,12 +6,13 @@ use std::path::PathBuf;
 use std::process;
 use rusoto_s3::*;
 use rusoto_core::ByteStream;
+use futures::stream;
+use futures::stream::StreamExt;
+
 use failure::Error;
 use failure::ResultExt;
 use flate2::Compression;
 use flate2::write::GzEncoder;
-use futures::prelude::*;
-use tokio::prelude::*;
 
 use crate::config::S3_BUCKET_NAME;
 use crate::file_upload::FileUpload;
@@ -91,45 +92,52 @@ impl<'a> AppBuilder<'a> {
         // loop runs
         let fail_count = Arc::clone(&failures);
 
-        let work = stream::iter_ok(self.files.clone()).for_each(move |f| {
-            // References the outer failures. This will get moved into
-            // the scope of the async task closure
-            let fails_ref = Arc::clone(&failures);
+        let work = stream::iter(self.files.clone())
+            .for_each(|f| {
+                // References the outer failures. This will get moved into
+                // the scope of the async task closure
+                let fails_ref = Arc::clone(&failures);
 
-            let FileUpload {filename, mimetype, bytes} = f;
-            let mut gzip = GzEncoder::new(Vec::new(), Compression::default());
-            gzip.write_all(&bytes).expect("Failed to gzip encode bytes");
-            let compressed_bytes = gzip.finish().expect("Failed to gzip file");
+                let FileUpload {filename, mimetype, bytes} = f;
+                let mut gzip = GzEncoder::new(Vec::new(), Compression::default());
+                gzip.write_all(&bytes).expect("Failed to gzip encode bytes");
+                let compressed_bytes = gzip.finish().expect("Failed to gzip file");
 
-            let req = PutObjectRequest {
-                bucket: String::from(S3_BUCKET_NAME),
-                key: filename.to_owned(),
-                body: Some(ByteStream::from(compressed_bytes)),
-                content_type: Some(mimetype.to_owned()),
-                content_encoding: Some(String::from("gzip")),
-                ..Default::default()
-            };
+                let req = PutObjectRequest {
+                    bucket: String::from(S3_BUCKET_NAME),
+                    key: filename.to_owned(),
+                    body: Some(ByteStream::from(compressed_bytes)),
+                    content_type: Some(mimetype.to_owned()),
+                    content_encoding: Some(String::from("gzip")),
+                    ..Default::default()
+                };
 
-            // Add the task so the event loop will pick it up
-            tokio::spawn(
-                client.put_object(req)
-                    // Tokio runtime expects futures to return ()
-                    .map(move |_| () )
-                    // Tokio runtime expects futures errors to be ()
-                    .map_err(move |e| {
-                        // Swap out the current count with our new
-                        // count of failures.
-                        let mut fails = *fails_ref.lock().unwrap();
-                        let mut new_fails = fails + 1;
-                        mem::swap(&mut fails, &mut new_fails);
-                        println!("File upload error: {}", e);
-                    })
-            )
-        });
+                // Need to borrow then move the client into async
+                // block so that it lives long enough
+                let borrowed_client = &client;
+
+                async move {
+                    let resp = borrowed_client.put_object(req).await;
+                    match resp {
+                        // Stream for_each expects futures to return ()
+                        Ok(_) => (),
+                        Err(error) => {
+                            // Swap out the current count with our new
+                            // count of failures.
+                            let mut fails = *fails_ref.lock().unwrap();
+                            let mut new_fails = fails + 1;
+                            mem::swap(&mut fails, &mut new_fails);
+                            println!("File upload error: {}", error);
+                        }
+                    }
+                }
+            });
 
         // Actually execute the async tasks, blocking the main thread
         // until idle (completed all spawned tasks)
-        tokio::run(work);
+        let mut runtime = tokio::runtime::Runtime::new()
+            .expect("Failed to initialize runtime");
+        runtime.block_on(async { work.await });
 
         if *fail_count.lock().unwrap() > 0 {
             Err(format_err!("Failed to upload app to S3"))

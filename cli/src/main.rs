@@ -86,7 +86,7 @@ fn random_version_works() {
     assert_eq!(7, random_version().len());
 }
 
-fn run() -> Result<(), Error> {
+async fn run() -> Result<(), Error> {
     let handlebars = load_templates().context("Failed to load templates")?;
 
     let yaml = load_yaml!("cli.yaml");
@@ -134,7 +134,7 @@ fn run() -> Result<(), Error> {
                                               values.email.clone(),
                                               values.username.clone(),
                                               values.password.clone())
-                    .sync()
+                    .await
                     .context("Signup failed")?
                     .user_sub;
 
@@ -153,6 +153,7 @@ fn run() -> Result<(), Error> {
                                        &cache,
                                        values.username.clone(),
                                        values.password.clone())
+                            .await
                             .or_else(|e| {
                                 match e {
                                     InitiateAuthError::UserNotConfirmed(_) => {
@@ -171,7 +172,11 @@ fn run() -> Result<(), Error> {
             },
             Command::Setup => {
                 let values = prompt::login();
+                // TODO this must use anonymous credentials otherwise
+                // it will fail on machines that don't have any AWS
+                // credentials
                 let id_provider_client = CognitoIdentityProviderClient::new(Region::UsWest2);
+                // CognitoIdentityProviderClient::new_with(rusoto_credential::Anonymous ,Region::UsWest2)
                 let id_client = CognitoIdentityClient::new(Region::UsWest2);
 
                 account::setup(&id_provider_client,
@@ -179,6 +184,7 @@ fn run() -> Result<(), Error> {
                                &cache,
                                values.username.clone(),
                                values.password.clone())
+                    .await
                     .expect("Unable to login and perform local set up");
             },
             Command::NewProject => {
@@ -337,6 +343,7 @@ wasm_path=\"target/wasm32-unknown-unknown/release/{}.wasm\"
                     .context("Failed to parse woz config")?;
 
                 let s3_client = upload_client::authenticated_client(&cache)
+                    .await
                     .context("Unable to initialize upload client")?;
 
                 let identity_id = cache.get("identity")
@@ -416,8 +423,9 @@ wasm_path=\"target/wasm32-unknown-unknown/release/{}.wasm\"
     Ok(())
 }
 
-fn main() {
-    run()
+#[tokio::main]
+async fn main() {
+    run().await
         .map_err(|e| {
             println!("{}\n{}", e,
                      e.iter_causes()

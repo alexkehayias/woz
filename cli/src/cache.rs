@@ -95,7 +95,7 @@ impl FileCache {
         let mut in_out = content.clone();
         // Opening key used to decrypt data
         let o_key = UnboundKey::new(&CHACHA20_POLY1305, &self.key)
-            .expect("Failed to init decryption key");;
+            .expect("Failed to init decryption key");
         let mut opening_key = OpeningKey::new(
             o_key,
             OneNonceSequence::new(nonce)
