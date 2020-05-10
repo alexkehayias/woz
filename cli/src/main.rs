@@ -129,7 +129,7 @@ async fn run() -> Result<(), Error> {
                 // TODO first check if there is an existing installation
                 let values = prompt::signup();
                 let id_provider_client = account::anonymous_identity_provider_client();
-                let id_client = CognitoIdentityClient::new(Region::UsWest2);
+                let id_client = account::anonymous_identity_client();
 
                 let user_id = account::signup(&id_provider_client,
                                               values.email.clone(),
@@ -144,6 +144,7 @@ async fn run() -> Result<(), Error> {
 
                 // Prompt the user to confirm they clicked the verification link
                 let mut email_verified = false;
+
                 while !email_verified {
                     println!("Please check your inbox for an email to verify your account.");
                     if prompt::is_email_verified() {
@@ -166,6 +167,8 @@ async fn run() -> Result<(), Error> {
                                 }
                             })
                             .context("Failed to set up account")?;
+
+                        email_verified = true;
                     }
                 };
 
@@ -173,12 +176,8 @@ async fn run() -> Result<(), Error> {
             },
             Command::Setup => {
                 let values = prompt::login();
-                // TODO this must use anonymous credentials otherwise
-                // it will fail on machines that don't have any AWS
-                // credentials
                 let id_provider_client = account::anonymous_identity_provider_client();
-                // CognitoIdentityProviderClient::new_with(rusoto_credential::Anonymous ,Region::UsWest2)
-                let id_client = CognitoIdentityClient::new(Region::UsWest2);
+                let id_client = account::anonymous_identity_client();
 
                 account::setup(&id_provider_client,
                                &id_client,

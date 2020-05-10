@@ -94,7 +94,7 @@ async fn ensure_id_token(cache: &FileCache, id_provider_client: &CognitoIdentity
 
 pub async fn authenticated_client(cache: &FileCache) -> Result<S3Client, Error> {
     let id_provider_client = CognitoIdentityProviderClient::new(Region::UsWest2);
-    let id_client = CognitoIdentityClient::new(Region::UsWest2);
+    let id_client = account::anonymous_identity_client();
 
     let refresh_token = ensure_refresh_token(&cache, &id_provider_client).await;
     let identity_id = cache.get("identity").context("Unable to retrieve user ID")?;
