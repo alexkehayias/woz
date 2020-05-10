@@ -43,35 +43,54 @@ async fn ensure_refresh_token(cache: &FileCache, client: &CognitoIdentityProvide
     token
 }
 
+async fn ensure_id_token(cache: &FileCache, id_provider_client: &CognitoIdentityProviderClient, refresh_token: &String) -> String {
+    let result = account::refresh_auth(&id_provider_client, &refresh_token).await;
+
+    match result {
+        Ok(resp) => {
+            let id_token = resp
+                .authentication_result.expect("No auth result")
+                .id_token.expect("No ID token");
+            id_token
+        },
+        Err(error) => {
+            println!("Getting refresh token failed: {}", error);
+
+            let creds = prompt::login();
+
+            // TODO: handle login failed and retrying in a loop until successful
+            account::login(&id_provider_client, creds.username, creds.password).await
+                .or_else(|e| {
+                    println!("Login failed: {}", e);
+                    Err(e)
+                })
+                .and_then(|resp| {
+                    // Store the refresh token too
+                    let refresh_token = resp.clone()
+                        .authentication_result.expect("Failed")
+                        .refresh_token.expect("Missing refresh token");
+
+                    cache.set_encrypted("refresh_token", refresh_token.as_bytes().to_vec())
+                        .expect("Failed to cache refresh token");
+
+                    let id_token = resp
+                        .authentication_result.expect("No auth result")
+                        .id_token.expect("No ID token");
+
+                    Ok(id_token)
+                })
+                .expect("Failed to authenticate")
+        }
+    }
+}
+
 pub async fn authenticated_client(cache: &FileCache) -> Result<S3Client, Error> {
     let id_provider_client = CognitoIdentityProviderClient::new(Region::UsWest2);
     let id_client = CognitoIdentityClient::new(Region::UsWest2);
 
     let refresh_token = ensure_refresh_token(&cache, &id_provider_client).await;
     let identity_id = cache.get("identity").context("Unable to retrieve user ID")?;
-
-    let id_token = account::refresh_auth(&id_provider_client, &refresh_token).await
-        // TODO fix this to work with async
-        // .or_else(|err| {
-        //     // TODO only login if the failure is due to an auth error
-        //     println!("Getting refresh token failed: {}", err);
-        //     let creds = prompt::login();
-        //     account::login(&id_provider_client, creds.username, creds.password).await
-        //         .or_else(|e| {
-        //             println!("Login failed: {}", e);
-        //             Err(e)
-        //         })
-        //         .and_then(|resp| {
-        //             let token = resp.clone()
-        //                 .authentication_result.expect("Failed")
-        //                 .refresh_token.expect("Missing refresh token");
-        //             cache.set_encrypted("refresh_token", token.as_bytes().to_vec())
-        //                 .expect("Failed to cache refresh token");
-        //             Ok(resp)})
-        // })
-        .context("Failed to get id token")?
-        .authentication_result.expect("No auth result")
-        .id_token.expect("No access token");
+    let id_token = ensure_id_token(&cache, &id_provider_client, &refresh_token).await;
 
     let aws_creds = account::aws_credentials(&id_client, &identity_id, &id_token).await
         .context("Failed to fetch AWS credentials")?

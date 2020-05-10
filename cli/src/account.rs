@@ -38,12 +38,14 @@ pub async fn refresh_auth(client: &CognitoIdentityProviderClient, refresh_token:
                           -> Result<InitiateAuthResponse, RusotoError<InitiateAuthError>> {
     let mut auth_params = HashMap::new();
     auth_params.insert(String::from("REFRESH_TOKEN"), refresh_token.to_string());
+
     let req = InitiateAuthRequest {
         client_id: CLIENT_ID.to_string(),
         auth_flow: String::from("REFRESH_TOKEN_AUTH"),
         auth_parameters: Some(auth_params),
         ..Default::default()
     };
+
     client.initiate_auth(req).await
 }
 
