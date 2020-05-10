@@ -23,12 +23,12 @@ pub async fn signup(client: &CognitoIdentityProviderClient, email: String,
     client.sign_up(request).await
 }
 
-pub async fn login(client: &CognitoIdentityProviderClient, username: String, password: String) -> Result<InitiateAuthResponse, RusotoError<InitiateAuthError>> {
+pub async fn login(client: &CognitoIdentityProviderClient, username: &String, password: &String) -> Result<InitiateAuthResponse, RusotoError<InitiateAuthError>> {
     let mut request = InitiateAuthRequest::default();
     request.auth_flow = String::from("USER_PASSWORD_AUTH");
     let mut auth_params = HashMap::new();
-    auth_params.insert(String::from("USERNAME"), username);
-    auth_params.insert(String::from("PASSWORD"), password);
+    auth_params.insert(String::from("USERNAME"), username.to_owned());
+    auth_params.insert(String::from("PASSWORD"), password.to_owned());
     request.client_id = String::from(CLIENT_ID);
     request.auth_parameters = Some(auth_params);
     client.initiate_auth(request).await
@@ -67,7 +67,7 @@ pub async fn setup(id_provider_client: &CognitoIdentityProviderClient,
                    id_client: &CognitoIdentityClient,
                    cache: &FileCache,
                    username: String, password: String) -> Result<(), InitiateAuthError> {
-    match login(&id_provider_client, username, password).await {
+    match login(&id_provider_client, &username, &password).await {
         Ok(resp) => {
             let auth_result = resp.authentication_result
                 .expect("No auth result");

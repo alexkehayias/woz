@@ -23,7 +23,7 @@ async fn ensure_refresh_token(cache: &FileCache, client: &CognitoIdentityProvide
             Ok(t) => token = Some(t),
             Err(_) => {
                 let creds = prompt::login();
-                let resp = account::login(&client, creds.username, creds.password).await;
+                let resp = account::login(&client, &creds.username, &creds.password).await;
 
                 // Keep retrying login until successful
                 if resp.is_err() {
@@ -50,39 +50,44 @@ async fn ensure_id_token(cache: &FileCache, id_provider_client: &CognitoIdentity
     let result = account::refresh_auth(&id_provider_client, &refresh_token).await;
 
     match result {
-        Ok(resp) => {
-            let id_token = resp
-                .authentication_result.expect("No auth result")
-                .id_token.expect("No ID token");
-            id_token
-        },
+        Ok(resp) => resp
+            .authentication_result.expect("No auth result")
+            .id_token.expect("No ID token"),
         Err(error) => {
             println!("Getting refresh token failed: {}", error);
 
             let creds = prompt::login();
+            let username = creds.username;
+            let password = creds.password;
 
-            // TODO: handle login failed and retrying in a loop until successful
-            account::login(&id_provider_client, creds.username, creds.password).await
-                .or_else(|e| {
-                    println!("Login failed: {}", e);
-                    Err(e)
-                })
-                .and_then(|resp| {
-                    // Store the refresh token too
-                    let refresh_token = resp.clone()
-                        .authentication_result.expect("Failed")
-                        .refresh_token.expect("Missing refresh token");
+            let mut id_token = None;
 
-                    cache.set_encrypted("refresh_token", refresh_token.as_bytes().to_vec())
-                        .expect("Failed to cache refresh token");
+            while let None = id_token {
+                let result = account::login(&id_provider_client, &username, &password).await;
 
-                    let id_token = resp
-                        .authentication_result.expect("No auth result")
-                        .id_token.expect("No ID token");
+                if result.is_err() {
+                    println!("Login failed: {}", error);
+                    continue
+                };
 
-                    Ok(id_token)
-                })
-                .expect("Failed to authenticate")
+                let resp = result.unwrap();
+
+                // Store the refresh token too
+                let refresh_token = resp.clone()
+                    .authentication_result.expect("Failed")
+                    .refresh_token.expect("Missing refresh token");
+
+                cache.set_encrypted("refresh_token", refresh_token.as_bytes().to_vec())
+                    .expect("Failed to cache refresh token");
+
+                id_token = Some(resp
+                                .authentication_result.expect("No auth result")
+                                .id_token.expect("No ID token"));
+
+                break
+            };
+
+            id_token.unwrap()
         }
     }
 }
