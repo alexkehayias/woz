@@ -16,31 +16,34 @@ use crate::account;
 /// Attempt to get a refresh_token token, prompting the user to log in if
 /// refresh token is expired and stores it locally.
 async fn ensure_refresh_token(cache: &FileCache, client: &CognitoIdentityProviderClient) -> String {
-    let token = match cache.get_encrypted("refresh_token") {
-        Ok(token) => token,
-        Err(_) => {
-            let creds = prompt::login();
-            let resp = account::login(&client, creds.username, creds.password).await;
+    let mut token = None;
 
-            // TODO recursion not allowed in async functions so need
-            // to replace this to loop over account login until
-            // successful
-            // if resp.is_err() {
-            //     return ensure_refresh_token(cache, client).await
-            // };
+    while let None = token {
+        match cache.get_encrypted("refresh_token") {
+            Ok(t) => token = Some(t),
+            Err(_) => {
+                let creds = prompt::login();
+                let resp = account::login(&client, creds.username, creds.password).await;
 
-            let token = resp.unwrap().authentication_result
-                .expect("Failed")
-                .refresh_token
-                .expect("Missing refresh token");
+                // Keep retrying login until successful
+                if resp.is_err() {
+                    continue
+                };
 
-            cache.set_encrypted("refresh_token", token.as_bytes().to_vec())
-                .expect("Failed to cache refresh token");
+                let t = resp.unwrap().authentication_result
+                    .expect("Failed")
+                    .refresh_token
+                    .expect("Missing refresh token");
 
-            token
+                cache.set_encrypted("refresh_token", t.as_bytes().to_vec())
+                    .expect("Failed to cache refresh token");
+
+                token = Some(t)
+            }
         }
     };
-    token
+
+    token.unwrap()
 }
 
 async fn ensure_id_token(cache: &FileCache, id_provider_client: &CognitoIdentityProviderClient, refresh_token: &String) -> String {
