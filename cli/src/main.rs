@@ -125,9 +125,10 @@ async fn run() -> Result<(), Error> {
             // 4. A refresh token
             Command::Signup => {
                 fs::create_dir_all(&home_path).context("Failed to make home directory")?;
+
                 // TODO first check if there is an existing installation
                 let values = prompt::signup();
-                let id_provider_client = CognitoIdentityProviderClient::new(Region::UsWest2);
+                let id_provider_client = account::anonymous_identity_provider_client();
                 let id_client = CognitoIdentityClient::new(Region::UsWest2);
 
                 let user_id = account::signup(&id_provider_client,
@@ -175,7 +176,7 @@ async fn run() -> Result<(), Error> {
                 // TODO this must use anonymous credentials otherwise
                 // it will fail on machines that don't have any AWS
                 // credentials
-                let id_provider_client = CognitoIdentityProviderClient::new(Region::UsWest2);
+                let id_provider_client = account::anonymous_identity_provider_client();
                 // CognitoIdentityProviderClient::new_with(rusoto_credential::Anonymous ,Region::UsWest2)
                 let id_client = CognitoIdentityClient::new(Region::UsWest2);
 

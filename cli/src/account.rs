@@ -1,12 +1,28 @@
 use std::collections::HashMap;
-use rusoto_core::RusotoError;
+use rusoto_core::{RusotoError, Region};
+use rusoto_core::credential::{StaticProvider, AwsCredentials};
+use rusoto_core::request::HttpClient;
 use rusoto_cognito_identity::*;
 use rusoto_cognito_idp::CognitoIdentityProvider;
 use rusoto_cognito_idp::*;
 
+
 use crate::cache::FileCache;
 use crate::config::*;
 
+
+// By default, CognitoIdentityProviderClient::new will attempt to use
+// the aws credentials on the user's machine (e.g. ~/.aws/credentials
+// or environment variables). If the user doesn't have any
+// credentials, signup and setup will fail. The client returned by
+// this function uses anonymous credentials which prevents this issue.
+pub fn anonymous_identity_provider_client() -> CognitoIdentityProviderClient {
+    CognitoIdentityProviderClient::new_with(
+        HttpClient::new().expect("Failed to create HTTP client"),
+        StaticProvider::from(AwsCredentials::default()),
+        Region::UsWest2
+    )
+}
 
 pub async fn signup(client: &CognitoIdentityProviderClient, email: String,
                     username: String, password: String)
