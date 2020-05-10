@@ -4,7 +4,6 @@ use failure::ResultExt;
 use rusoto_core::Region;
 use rusoto_core::request::HttpClient;
 use rusoto_credential::StaticProvider;
-use rusoto_cognito_identity::*;
 use rusoto_cognito_idp::*;
 use rusoto_s3::*;
 

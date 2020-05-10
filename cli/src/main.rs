@@ -22,10 +22,7 @@ extern crate tokio;
 
 use failure::Error;
 use failure::ResultExt;
-
-use rusoto_core::Region;
 use rusoto_cognito_idp::*;
-use rusoto_cognito_identity::*;
 
 mod prompt;
 mod account;
