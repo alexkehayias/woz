@@ -55,14 +55,13 @@ async fn ensure_id_token(cache: &FileCache, id_provider_client: &CognitoIdentity
             .id_token.expect("No ID token"),
         Err(error) => {
             println!("Getting refresh token failed: {}", error);
-
-            let creds = prompt::login();
-            let username = creds.username;
-            let password = creds.password;
-
             let mut id_token = None;
 
             while let None = id_token {
+                let creds = prompt::login();
+                let username = creds.username;
+                let password = creds.password;
+
                 let result = account::login(&id_provider_client, &username, &password).await;
 
                 if result.is_err() {
@@ -93,7 +92,7 @@ async fn ensure_id_token(cache: &FileCache, id_provider_client: &CognitoIdentity
 }
 
 pub async fn authenticated_client(cache: &FileCache) -> Result<S3Client, Error> {
-    let id_provider_client = CognitoIdentityProviderClient::new(Region::UsWest2);
+    let id_provider_client = account::anonymous_identity_provider_client();
     let id_client = account::anonymous_identity_client();
 
     let refresh_token = ensure_refresh_token(&cache, &id_provider_client).await;

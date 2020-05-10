@@ -84,7 +84,7 @@ impl<'a> AppBuilder<'a> {
 
     /// Upload the app file bundle to S3. It will be immediately
     /// available on the public internet.
-    pub fn upload(&self, client: S3Client) -> Result<(), Error> {
+    pub async fn upload(&self, client: S3Client) -> Result<(), Error> {
         // In order to get errors out of tokio they need to be share
         // the data in a thread safe way
         let failures = Arc::new(Mutex::new(0));
@@ -92,7 +92,7 @@ impl<'a> AppBuilder<'a> {
         // loop runs
         let fail_count = Arc::clone(&failures);
 
-        let work = stream::iter(self.files.clone())
+        stream::iter(self.files.clone())
             .for_each(|f| {
                 // References the outer failures. This will get moved into
                 // the scope of the async task closure
@@ -131,13 +131,8 @@ impl<'a> AppBuilder<'a> {
                         }
                     }
                 }
-            });
-
-        // Actually execute the async tasks, blocking the main thread
-        // until idle (completed all spawned tasks)
-        let mut runtime = tokio::runtime::Runtime::new()
-            .expect("Failed to initialize runtime");
-        runtime.block_on(async { work.await });
+            })
+            .await;
 
         if *fail_count.lock().unwrap() > 0 {
             Err(format_err!("Failed to upload app to S3"))

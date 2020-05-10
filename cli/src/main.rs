@@ -410,7 +410,7 @@ wasm_path=\"target/wasm32-unknown-unknown/release/{}.wasm\"
                         )
                     )
                 }
-                app.upload(s3_client).context("Failed to upload app")?;
+                app.upload(s3_client).await.context("Failed to upload app")?;
                 println!("{}", format!("Your app is available at {}", url));
             }
             // Sub command parsing will print the error and exit
@@ -420,6 +420,7 @@ wasm_path=\"target/wasm32-unknown-unknown/release/{}.wasm\"
             _ => unimplemented!()
         };
     };
+
     Ok(())
 }
 
