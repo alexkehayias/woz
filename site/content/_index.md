@@ -62,7 +62,7 @@ curl -LSfs https://woz.sh/bin/install.sh | sh -s -- -f --target <NAME OF TARGET>
 ### Setup and deploy
 
 ```sh
-# Follow prompts to create your free Woz account
+# Follow prompts to create a free account and deploy to the sandbox
 woz signup
 # Create a new app
 woz new myapp && cd myapp
@@ -76,9 +76,9 @@ The 'Seed' example app uses the `seed` framework and clocks in at ~600kb (includ
 
 ## Hosting
 
-### Woz.sh Early Access—Free
+### Woz.sh Sandbox
 
-Due to the security requirements of PWAs and WebAssembly, the easiest way to deploy is to create a free woz.sh account. To create an account use `woz signup` and follow the prompts. If you already have an account use `woz setup` to set up your local computer with credentials. Then use `woz deploy` to deploy your app.
+Due to the security requirements of PWAs and WebAssembly, the easiest way to start building a PWAA is to use the woz.sh sandbox. To create an account use `woz signup` and follow the prompts. If you already have an account use `woz setup` to set up your local computer with credentials. Then use `woz deploy` to deploy your app.
 
 ### Self-hosting
 

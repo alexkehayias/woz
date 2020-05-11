@@ -64,7 +64,7 @@ curl -LSfs https://woz.sh/bin/install.sh | sh -s -- -f --target <NAME OF TARGET>
 ### Setup and deploy
 
 ```sh
-# Follow prompts to create your free Woz account
+# Follow prompts to create a free account and deploy to the sandbox
 woz signup
 # Create a new app
 woz new myapp && cd myapp
