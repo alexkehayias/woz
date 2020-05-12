@@ -17,7 +17,7 @@ pub const MAX_APP_SIZE_MB: usize = 20;
 pub const ENCRYPTION_PASSWORD: &str = env!("WOZ_ENCRYPTION_PASSWORD");
 pub const ENCRYPTION_SALT: &str = env!("WOZ_ENCRYPTION_SALT");
 
-pub static DEFAULT_PROJECT_LIB_RS: &str = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/examples/seed-app/src/lib.rs"));
+pub static DEFAULT_PROJECT_LIB_RS: &str = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/resources/project_templates/seed/lib.rs"));
 
 pub static LANDING_PAGE_CSS: &str = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/resources/styles/landing_page.css"));
 
