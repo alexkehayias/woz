@@ -129,9 +129,9 @@ async fn run() -> Result<(), Error> {
                 let id_client = account::anonymous_identity_client();
 
                 let user_id = account::signup(&id_provider_client,
-                                              values.email.clone(),
-                                              values.username.clone(),
-                                              values.password.clone())
+                                              &values.email,
+                                              &values.username,
+                                              &values.password)
                     .await
                     .context("Signup failed")?
                     .user_sub;
@@ -150,8 +150,8 @@ async fn run() -> Result<(), Error> {
                         account::setup(&id_provider_client,
                                        &id_client,
                                        &cache,
-                                       values.username.clone(),
-                                       values.password.clone())
+                                       &values.username,
+                                       &values.password)
                             .await
                             .or_else(|e| {
                                 match e {
@@ -179,8 +179,8 @@ async fn run() -> Result<(), Error> {
                 account::setup(&id_provider_client,
                                &id_client,
                                &cache,
-                               values.username.clone(),
-                               values.password.clone())
+                               &values.username,
+                               &values.password)
                     .await
                     .expect("Unable to login and perform local set up");
             },

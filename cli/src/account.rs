@@ -36,16 +36,18 @@ pub fn anonymous_identity_client() -> CognitoIdentityClient {
     )
 }
 
-pub async fn signup(client: &CognitoIdentityProviderClient, email: String,
-                    username: String, password: String)
+pub async fn signup(client: &CognitoIdentityProviderClient,
+                    email: &String,
+                    username: &String,
+                    password: &String)
                     -> Result<SignUpResponse, RusotoError<SignUpError>> {
     let mut request = SignUpRequest::default();
-    request.username = username;
-    request.password = password;
+    request.username = username.to_owned();
+    request.password = password.to_owned();
     request.client_id = String::from(CLIENT_ID);
     let email = AttributeType {
         name: String::from("email"),
-        value: Some(email)
+        value: Some(email.to_owned())
     };
     request.user_attributes = Some(vec![email]);
     client.sign_up(request).await
@@ -94,8 +96,9 @@ pub async fn identity_id(client: &CognitoIdentityClient, id_token: &str)
 pub async fn setup(id_provider_client: &CognitoIdentityProviderClient,
                    id_client: &CognitoIdentityClient,
                    cache: &FileCache,
-                   username: String, password: String) -> Result<(), InitiateAuthError> {
-    match login(&id_provider_client, &username, &password).await {
+                   username: &String,
+                   password: &String) -> Result<(), InitiateAuthError> {
+    match login(&id_provider_client, username, password).await {
         Ok(resp) => {
             let auth_result = resp.authentication_result
                 .expect("No auth result");
