@@ -11,7 +11,7 @@ pub struct PwaComponent<'a> {
     conf: &'a Config,
     url: &'a str,
     version: &'a str,
-    templates: &'a Handlebars
+    templates: &'a Handlebars<'a>
 }
 
 impl<'a> PwaComponent<'a> {

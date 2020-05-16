@@ -7,7 +7,7 @@ const APP_INDEX_TEMPLATE: &str = include_str!("templates/app/index.html");
 const MANIFEST_TEMPLATE: &str = include_str!("templates/app/manifest.json");
 const SERVICE_WORKER_JS_TEMPLATE: &str = include_str!("templates/app/serviceworker.js");
 
-pub fn load_templates() -> Result<Handlebars, Error> {
+pub fn load_templates() -> Result<Handlebars<'static>, Error> {
     let mut handlebars = Handlebars::new();
     handlebars.set_strict_mode(true);
     handlebars.register_template_string("landing_page_index", LANDING_PAGE_INDEX_TEMPLATE)?;

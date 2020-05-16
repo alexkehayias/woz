@@ -10,7 +10,7 @@ use crate::file_upload::FileUpload;
 pub struct LandingPageComponent<'a> {
     conf: &'a Config,
     url: &'a str,
-    templates: &'a Handlebars
+    templates: &'a Handlebars<'a>
 }
 
 impl<'a> LandingPageComponent<'a> {
