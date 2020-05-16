@@ -13,5 +13,5 @@ pub mod landing_page;
 pub trait AppComponent {
     /// Returns a collection of file uploads to be added to be added
     /// to the application. Ordering does not matter.
-    fn files(&self, file_prefix: &String) -> Result<Vec<FileUpload>, Error>;
+    fn files(&self, file_prefix: &str) -> Result<Vec<FileUpload>, Error>;
 }

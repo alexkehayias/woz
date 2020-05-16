@@ -28,18 +28,18 @@ pub static LANDING_PAGE_CSS: &str = include_str!(concat!(env!("CARGO_MANIFEST_DI
 // Making these all static even though they will only be accessed via
 // DEFAULT_ICONS so that it's a compile error if the default icon
 // files don't exist.
-static DEFAULT_ICON_48X48: &'static [u8; 831] = include_bytes!(concat!(env!("CARGO_MANIFEST_DIR"), "/resources/icons/48x48.png"));
-static DEFAULT_ICON_72X72: &'static [u8; 1196] = include_bytes!(concat!(env!("CARGO_MANIFEST_DIR"), "/resources/icons/72x72.png"));
-static DEFAULT_ICON_96X96: &'static [u8; 1538] = include_bytes!(concat!(env!("CARGO_MANIFEST_DIR"), "/resources/icons/96x96.png"));
-static DEFAULT_ICON_144X144: &'static [u8; 2217] = include_bytes!(concat!(env!("CARGO_MANIFEST_DIR"), "/resources/icons/144x144.png"));
-static DEFAULT_ICON_168X168: &'static [u8; 2566] = include_bytes!(concat!(env!("CARGO_MANIFEST_DIR"), "/resources/icons/168x168.png"));
-static DEFAULT_ICON_192X192: &'static [u8; 2870] = include_bytes!(concat!(env!("CARGO_MANIFEST_DIR"), "/resources/icons/192x192.png"));
-static DEFAULT_ICON_512X512: &'static [u8; 8042] = include_bytes!(concat!(env!("CARGO_MANIFEST_DIR"), "/resources/icons/512x512.png"));
+static DEFAULT_ICON_48X48: & [u8; 831] = include_bytes!(concat!(env!("CARGO_MANIFEST_DIR"), "/resources/icons/48x48.png"));
+static DEFAULT_ICON_72X72: & [u8; 1196] = include_bytes!(concat!(env!("CARGO_MANIFEST_DIR"), "/resources/icons/72x72.png"));
+static DEFAULT_ICON_96X96: & [u8; 1538] = include_bytes!(concat!(env!("CARGO_MANIFEST_DIR"), "/resources/icons/96x96.png"));
+static DEFAULT_ICON_144X144: & [u8; 2217] = include_bytes!(concat!(env!("CARGO_MANIFEST_DIR"), "/resources/icons/144x144.png"));
+static DEFAULT_ICON_168X168: & [u8; 2566] = include_bytes!(concat!(env!("CARGO_MANIFEST_DIR"), "/resources/icons/168x168.png"));
+static DEFAULT_ICON_192X192: & [u8; 2870] = include_bytes!(concat!(env!("CARGO_MANIFEST_DIR"), "/resources/icons/192x192.png"));
+static DEFAULT_ICON_512X512: & [u8; 8042] = include_bytes!(concat!(env!("CARGO_MANIFEST_DIR"), "/resources/icons/512x512.png"));
 
 // iOS icon sizes
-static DEFAULT_ICON_152X152: &'static [u8; 2321] = include_bytes!(concat!(env!("CARGO_MANIFEST_DIR"), "/resources/icons/152x152.png"));
-static DEFAULT_ICON_167X167: &'static [u8; 2489] = include_bytes!(concat!(env!("CARGO_MANIFEST_DIR"), "/resources/icons/167x167.png"));
-static DEFAULT_ICON_180X180: &'static [u8; 2717] = include_bytes!(concat!(env!("CARGO_MANIFEST_DIR"), "/resources/icons/180x180.png"));
+static DEFAULT_ICON_152X152: & [u8; 2321] = include_bytes!(concat!(env!("CARGO_MANIFEST_DIR"), "/resources/icons/152x152.png"));
+static DEFAULT_ICON_167X167: & [u8; 2489] = include_bytes!(concat!(env!("CARGO_MANIFEST_DIR"), "/resources/icons/167x167.png"));
+static DEFAULT_ICON_180X180: & [u8; 2717] = include_bytes!(concat!(env!("CARGO_MANIFEST_DIR"), "/resources/icons/180x180.png"));
 
 lazy_static!{
     pub static ref DEFAULT_ICONS: HashMap<&'static str, Vec<u8>> = {
@@ -58,16 +58,16 @@ lazy_static!{
     };
 }
 
-static DEFAULT_SPLASH_IPHONE5: &'static [u8; 7293] = include_bytes!("../resources/splashscreens/iphone5_splash.png");
-static DEFAULT_SPLASH_IPHONE6: &'static [u8; 8922] = include_bytes!("../resources/splashscreens/iphone6_splash.png");
-static DEFAULT_SPLASH_IPHONEPLUS: &'static [u8; 17976] = include_bytes!("../resources/splashscreens/iphoneplus_splash.png");
-static DEFAULT_SPLASH_IPHONEX: &'static [u8; 19105] = include_bytes!("../resources/splashscreens/iphonex_splash.png");
-static DEFAULT_SPLASH_IPHONEXR: &'static [u8; 11686] = include_bytes!("../resources/splashscreens/iphonexr_splash.png");
-static DEFAULT_SPLASH_IPHONEXSMAX: &'static [u8; 21352] = include_bytes!("../resources/splashscreens/iphonexsmax_splash.png");
-static DEFAULT_SPLASH_IPAD: &'static [u8; 19248] = include_bytes!("../resources/splashscreens/ipad_splash.png");
-static DEFAULT_SPLASH_IPADPRO1: &'static [u8; 21788] = include_bytes!("../resources/splashscreens/ipadpro1_splash.png");
-static DEFAULT_SPLASH_IPADPRO3: &'static [u8; 23329] = include_bytes!("../resources/splashscreens/ipadpro3_splash.png");
-static DEFAULT_SPLASH_IPADPRO2: &'static [u8; 30724] = include_bytes!("../resources/splashscreens/ipadpro2_splash.png");
+static DEFAULT_SPLASH_IPHONE5: & [u8; 7293] = include_bytes!("../resources/splashscreens/iphone5_splash.png");
+static DEFAULT_SPLASH_IPHONE6: & [u8; 8922] = include_bytes!("../resources/splashscreens/iphone6_splash.png");
+static DEFAULT_SPLASH_IPHONEPLUS: & [u8; 17976] = include_bytes!("../resources/splashscreens/iphoneplus_splash.png");
+static DEFAULT_SPLASH_IPHONEX: & [u8; 19105] = include_bytes!("../resources/splashscreens/iphonex_splash.png");
+static DEFAULT_SPLASH_IPHONEXR: & [u8; 11686] = include_bytes!("../resources/splashscreens/iphonexr_splash.png");
+static DEFAULT_SPLASH_IPHONEXSMAX: & [u8; 21352] = include_bytes!("../resources/splashscreens/iphonexsmax_splash.png");
+static DEFAULT_SPLASH_IPAD: & [u8; 19248] = include_bytes!("../resources/splashscreens/ipad_splash.png");
+static DEFAULT_SPLASH_IPADPRO1: & [u8; 21788] = include_bytes!("../resources/splashscreens/ipadpro1_splash.png");
+static DEFAULT_SPLASH_IPADPRO3: & [u8; 23329] = include_bytes!("../resources/splashscreens/ipadpro3_splash.png");
+static DEFAULT_SPLASH_IPADPRO2: & [u8; 30724] = include_bytes!("../resources/splashscreens/ipadpro2_splash.png");
 
 lazy_static!{
     pub static ref DEFAULT_SPLASHSCREENS: HashMap<&'static str, Vec<u8>> = {
@@ -139,7 +139,7 @@ impl Default for ProjectId {
 }
 
 impl ProjectId {
-    fn is_valid(id: &String) -> bool {
+    fn is_valid(id: &str) -> bool {
         PROJECT_ID_REGEX.is_match(id)
     }
 }

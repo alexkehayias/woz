@@ -45,7 +45,7 @@ async fn ensure_refresh_token(cache: &FileCache, client: &CognitoIdentityProvide
     token.unwrap()
 }
 
-async fn ensure_id_token(cache: &FileCache, id_provider_client: &CognitoIdentityProviderClient, refresh_token: &String) -> String {
+async fn ensure_id_token(cache: &FileCache, id_provider_client: &CognitoIdentityProviderClient, refresh_token: &str) -> String {
     let result = account::refresh_auth(&id_provider_client, &refresh_token).await;
 
     match result {

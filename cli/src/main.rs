@@ -8,7 +8,6 @@ use std::env;
 use std::process;
 use rand::{thread_rng, Rng};
 use rand::distributions::Alphanumeric;
-use toml;
 
 #[macro_use] extern crate clap;
 use clap::App;
@@ -17,8 +16,6 @@ use clap::App;
 #[macro_use] extern crate serde_derive;
 #[macro_use] extern crate serde_json;
 #[macro_use] extern crate failure;
-extern crate regex;
-extern crate tokio;
 
 use failure::Error;
 use failure::ResultExt;

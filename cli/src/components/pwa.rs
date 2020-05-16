@@ -9,22 +9,22 @@ use crate::file_upload::FileUpload;
 
 pub struct PwaComponent<'a> {
     conf: &'a Config,
-    url: &'a String,
-    version: &'a String,
+    url: &'a str,
+    version: &'a str,
     templates: &'a Handlebars
 }
 
 impl<'a> PwaComponent<'a> {
     pub fn new(conf: &'a Config,
-               url: &'a String,
+               url: &'a str,
                templates: &'a Handlebars,
-               version: &'a String) -> Self {
+               version: &'a str) -> Self {
         Self { conf, url, templates, version }
     }
 }
 
 impl<'a> AppComponent for PwaComponent<'a> {
-    fn files(&self, file_prefix: &String) -> Result<Vec<FileUpload>, Error> {
+    fn files(&self, file_prefix: &str) -> Result<Vec<FileUpload>, Error> {
         let index_template = self.templates.render("app_index", &json!({
             "name": self.conf.name,
             "author": self.conf.author,

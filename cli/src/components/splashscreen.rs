@@ -20,7 +20,7 @@ impl<'a> SplashscreenComponent<'a> {
 }
 
 impl<'a> AppComponent for SplashscreenComponent<'a> {
-    fn files(&self, file_prefix: &String) -> Result<Vec<FileUpload>, Error> {
+    fn files(&self, file_prefix: &str) -> Result<Vec<FileUpload>, Error> {
         let mut uploads = Vec::new();
 
         if let Some(splashscreens) = &self.conf.splashscreens {

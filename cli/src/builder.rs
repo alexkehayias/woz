@@ -53,7 +53,7 @@ impl<'a> AppBuilder<'a> {
     }
 
     pub fn build(&mut self, project_path: &PathBuf,
-                 file_prefix: &String, env: &Environment) -> Result<(), Error> {
+                 file_prefix: &str, env: &Environment) -> Result<(), Error> {
         // Do a cargo build
         let release_flag = match env {
             Environment::Production => " --release",
@@ -105,9 +105,9 @@ impl<'a> AppBuilder<'a> {
 
                 let req = PutObjectRequest {
                     bucket: String::from(S3_BUCKET_NAME),
-                    key: filename.to_owned(),
+                    key: filename,
                     body: Some(ByteStream::from(compressed_bytes)),
-                    content_type: Some(mimetype.to_owned()),
+                    content_type: Some(mimetype),
                     content_encoding: Some(String::from("gzip")),
                     ..Default::default()
                 };

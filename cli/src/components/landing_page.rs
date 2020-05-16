@@ -9,19 +9,20 @@ use crate::file_upload::FileUpload;
 
 pub struct LandingPageComponent<'a> {
     conf: &'a Config,
-    url: &'a String,
+    url: &'a str,
     templates: &'a Handlebars
 }
 
 impl<'a> LandingPageComponent<'a> {
-    pub fn new(conf: &'a Config, url: &'a String,
+    pub fn new(conf: &'a Config,
+               url: &'a str,
                templates: &'a Handlebars) -> Self {
         Self { conf, url, templates }
     }
 }
 
 impl<'a> AppComponent for LandingPageComponent<'a> {
-    fn files(&self, file_prefix: &String) -> Result<Vec<FileUpload>, Error> {
+    fn files(&self, file_prefix: &str) -> Result<Vec<FileUpload>, Error> {
         let index_template = self.templates.render(
             "landing_page_index",
             &json!({

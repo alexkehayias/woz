@@ -49,11 +49,7 @@ pub fn signup() -> SignupValues {
     let (username, password) = username_password();
     let email = email();
 
-    SignupValues {
-        email: email.to_owned(),
-        username: username.to_owned(),
-        password: password.to_owned()
-    }
+    SignupValues { email, username, password }
 }
 
 pub struct Credentials {
@@ -65,10 +61,7 @@ pub fn login() -> Credentials {
     print!("Please login to continue: ");
     let (username, password) = username_password();
 
-    Credentials {
-        username: username.to_owned(),
-        password: password.to_owned(),
-    }
+    Credentials { username, password }
 }
 
 pub fn is_email_verified() -> bool {
@@ -81,15 +74,12 @@ pub fn is_email_verified() -> bool {
         .unwrap();
     stdout.flush().expect("Error");
 
-    let mut out = false;
-    for c in stdin.keys() {
-        match c.unwrap() {
-            Key::Char('y') => out = true,
-            Key::Char('n') => out = false,
-            _ => {println!("Sorry didn't catch that"); out = false},
-        };
-        stdout.flush().expect("Error");
-        break
-    };
-    out
+    let c = stdin.keys().next().unwrap();
+    stdout.flush().expect("Error");
+
+    match c.unwrap() {
+        Key::Char('y') => true,
+        Key::Char('n') => false,
+        _ => {println!("Sorry didn't catch that"); false},
+    }
 }

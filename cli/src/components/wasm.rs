@@ -22,7 +22,7 @@ impl<'a> WasmComponent<'a> {
 }
 
 impl<'a> AppComponent for WasmComponent<'a> {
-    fn files(&self, file_prefix: &String) -> Result<Vec<FileUpload>, Error> {
+    fn files(&self, file_prefix: &str) -> Result<Vec<FileUpload>, Error> {
         let command = format!(
             "wasm-bindgen {} --no-typescript --no-modules --out-dir {} --out-name app",
             self.wasm_path.clone().into_os_string().into_string().unwrap(),

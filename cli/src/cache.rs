@@ -55,7 +55,7 @@ impl FileCache {
 
     fn encrypt(&self, content: Vec<u8>) -> Vec<u8> {
         // Ring uses the same input variable as output
-        let mut in_out = content.clone();
+        let mut in_out = content;
 
         // Fill nonce with random data. Random data must be used only
         // once per encryption
@@ -92,7 +92,7 @@ impl FileCache {
     }
 
     fn decrypt(&self, nonce: Nonce, content: Vec<u8>) -> Vec<u8> {
-        let mut in_out = content.clone();
+        let mut in_out = content;
         // Opening key used to decrypt data
         let o_key = UnboundKey::new(&CHACHA20_POLY1305, &self.key)
             .expect("Failed to init decryption key");

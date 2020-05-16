@@ -37,9 +37,9 @@ pub fn anonymous_identity_client() -> CognitoIdentityClient {
 }
 
 pub async fn signup(client: &CognitoIdentityProviderClient,
-                    email: &String,
-                    username: &String,
-                    password: &String)
+                    email: &str,
+                    username: &str,
+                    password: &str)
                     -> Result<SignUpResponse, RusotoError<SignUpError>> {
     let mut request = SignUpRequest::default();
     request.username = username.to_owned();
@@ -53,7 +53,7 @@ pub async fn signup(client: &CognitoIdentityProviderClient,
     client.sign_up(request).await
 }
 
-pub async fn login(client: &CognitoIdentityProviderClient, username: &String, password: &String) -> Result<InitiateAuthResponse, RusotoError<InitiateAuthError>> {
+pub async fn login(client: &CognitoIdentityProviderClient, username: &str, password: &str) -> Result<InitiateAuthResponse, RusotoError<InitiateAuthError>> {
     let mut request = InitiateAuthRequest::default();
     request.auth_flow = String::from("USER_PASSWORD_AUTH");
     let mut auth_params = HashMap::new();
@@ -96,8 +96,8 @@ pub async fn identity_id(client: &CognitoIdentityClient, id_token: &str)
 pub async fn setup(id_provider_client: &CognitoIdentityProviderClient,
                    id_client: &CognitoIdentityClient,
                    cache: &FileCache,
-                   username: &String,
-                   password: &String) -> Result<(), InitiateAuthError> {
+                   username: &str,
+                   password: &str) -> Result<(), InitiateAuthError> {
     match login(&id_provider_client, username, password).await {
         Ok(resp) => {
             let auth_result = resp.authentication_result
