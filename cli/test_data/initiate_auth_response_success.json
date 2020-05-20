@@ -1,0 +1,18 @@
+{
+   "AuthenticationResult": {
+      "AccessToken": "access_token_123",
+      "ExpiresIn": 1,
+      "IdToken": "id_token_123",
+      "NewDeviceMetadata": {
+         "DeviceGroupKey": "",
+         "DeviceKey": ""
+      },
+      "RefreshToken": "refresh_token_123",
+      "TokenType": ""
+   },
+   "ChallengeName": "",
+   "ChallengeParameters": {
+      "string" : ""
+   },
+   "Session": ""
+}

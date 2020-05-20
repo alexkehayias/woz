@@ -144,3 +144,99 @@ pub async fn aws_credentials(client: &CognitoIdentityClient, identity_id: &str, 
     req.logins = Some(logins);
     client.get_credentials_for_identity(req).await
 }
+
+
+#[cfg(test)]
+mod account_tests {
+    use super::*;
+    use rusoto_mock::{MockRequestDispatcher, MockResponseReader, ReadMockResponse};
+
+    fn mock_id_provider_client(resp: &String) -> CognitoIdentityProviderClient {
+        CognitoIdentityProviderClient::new_with(
+            MockRequestDispatcher::default().with_body(resp),
+            StaticProvider::from(AwsCredentials::default()),
+            Region::UsWest2
+        )
+    }
+
+    fn mock_id_client(resp: &String) -> CognitoIdentityClient {
+        CognitoIdentityClient::new_with(
+            MockRequestDispatcher::default().with_body(resp),
+            StaticProvider::from(AwsCredentials::default()),
+            Region::UsWest2
+        )
+    }
+
+    #[tokio::test]
+    async fn test_signup() {
+        let resp = MockResponseReader::read_response(&"test_data", &"signup_response_success.json");
+        let client = mock_id_provider_client(&resp);
+
+        signup(&client, &"test@example.com", &"test_user", &"test1234").await.unwrap();
+    }
+
+
+    #[tokio::test]
+    async fn test_login() {
+        let resp = MockResponseReader::read_response(&"test_data", &"login_response_success.json");
+        let client = mock_id_provider_client(&resp);
+
+        login(&client, &"test_user", &"test1234").await.unwrap();
+    }
+
+    #[tokio::test]
+    async fn test_refresh_auth() {
+        let resp = MockResponseReader::read_response(&"test_data", &"initiate_auth_response_success.json");
+        let client = mock_id_provider_client(&resp);
+
+        let token = refresh_auth(&client, &"old_token_123")
+            .await.unwrap()
+            .authentication_result.unwrap()
+            .id_token.unwrap();
+
+        assert_eq!(token, "id_token_123")
+    }
+
+    #[tokio::test]
+    async fn test_identity_id() {
+        let resp = MockResponseReader::read_response(&"test_data", &"get_id_response_success.json");
+        let client = mock_id_client(&resp);
+
+        let id = identity_id(&client, &"id_token_123")
+            .await.unwrap()
+            .identity_id.unwrap();
+
+        assert_eq!(id, "id_123");
+    }
+
+    #[tokio::test]
+    async fn test_setup() {
+        let id_provider_resp = MockResponseReader::read_response(&"test_data", &"initiate_auth_response_success.json");
+        let id_provider_client = mock_id_provider_client(&id_provider_resp);
+
+        let id_resp = MockResponseReader::read_response(&"test_data", &"get_id_response_success.json");
+        let id_client = mock_id_client(&id_resp);
+
+        let encryption_key = FileCache::make_key(&"test_password", &"test_salt");
+        let tmp_dir = std::env::temp_dir();
+        let cache = FileCache::new(encryption_key, tmp_dir);
+
+        setup(
+            &id_provider_client,
+            &id_client,
+            &cache,
+            &"test_username",
+            &"test_password"
+        ).await.unwrap();
+
+        assert_eq!(
+            cache.get_encrypted(&"refresh_token").unwrap(),
+            "refresh_token_123"
+        );
+
+        assert_eq!(
+            cache.get(&"identity").unwrap(),
+            "id_123"
+        );
+    }
+}
